@@ -1,222 +1,178 @@
-# ⚡ Lightning Starter Kit
+# ⚡ NosTeach
 
-Starter kit oficial para las **Lightning Hackathons 2026** de La Crypta.
+Plataforma educativa descentralizada construida sobre Nostr.
 
-Incluye ejemplos, utilidades y guía asistida con AI para construir tu proyecto.
+## Concepto
 
-## 🚀 Inicio rápido
+NosTeach permite:
+- **Profesores** publicar cursos como eventos Nostr
+- **Alumnos** consumir contenido y tomar evaluaciones
+- **Patrocinadores** apoyar con zaps Lightning
 
-### Opción 1: Con Claude Code (recomendado)
+Todo vive en relays Nostr públicos. Sin suscripciones, sin censores.
 
-```bash
-# Clonar el repositorio
-git clone https://github.com/lacrypta/lightning-starter.git
-cd lightning-starter
+## Hackathon
 
-# Abrir con Claude Code
-claude
+Participando en **FOUNDATIONS** - La Crypta Lightning Hackathons 2026.
+- **Premio**: 1,000,000 sats
+- **Info**: https://hackaton.lacrypta.ar
 
-# El asistente te guía para construir tu proyecto
-```
-
-Claude va a:
-- Preguntarte qué querés construir
-- Proponerte ideas si no tenés
-- Guiarte paso a paso
-- Ayudarte a ganar la hackathon
-
-### Opción 2: Manual
+## Inicio Rápido
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/lacrypta/lightning-starter.git
-cd lightning-starter
+git clone https://github.com/fchurca/nosteach.git
+cd nosteach
 
 # Instalar dependencias
 npm install
 
-# Ejecutar el frontend de demo
+# Configurar secrets para testing (requerido para tests)
+cp .secrets.example .secrets
+
+# Ejecutar
 npm run dev
 ```
 
-Abrir http://localhost:5173 en el navegador.
+Abrir http://localhost:5173
 
-## 📦 Herramientas incluidas
+## Funcionalidades
 
-| Herramienta | Descripción | Docs |
-|-------------|-------------|------|
-| **@getalby/sdk** | SDK de Alby para NWC y pagos | [Docs](https://github.com/getAlby/js-sdk) |
-| **@getalby/lightning-tools** | Utilidades: LNURL, Lightning Address | [Docs](https://github.com/getAlby/lightning-tools) |
-| **@nostr-dev-kit/ndk** | SDK para Nostr (identidad, eventos) | [Docs](https://github.com/nostr-dev-kit/ndk) |
-| **webln** | Standard para wallets Lightning | [Docs](https://webln.dev) |
+### Autenticación
+- Login con nsec (clave privada Nostr)
+- Sesión persistente en localStorage
 
-## 🔌 Nostr Wallet Connect (NWC)
+### Roles
+- **Profesor**: Publicar cursos
+- **Alumno**: Tomar cursos y evaluaciones
+- **Patrocinador**: Apoyar con sats
 
-NWC permite conectar tu app a cualquier wallet Lightning compatible.
+### Cursos
+- Crear curso con título, descripción, precio
+- Agregar módulos (texto o enlaces)
+- Agregar preguntas de evaluación
+- Ver cursos publicados por otros
 
-```javascript
-import { nwc } from "@getalby/sdk";
+## Stack Técnico
 
-// Conectar con string NWC
-const client = new nwc.NWCClient({
-  nostrWalletConnectUrl: "nostr+walletconnect://..."
-});
+| Capa | Tecnología |
+|------|------------|
+| Frontend | Vite + Vanilla JS |
+| Nostr | nostr-tools (WebSocket directo) |
+| Pagos | @getalby/sdk (NWC), webln |
+| Storage | Relays Nostr (NIP-78) |
+| Tests | Playwright |
 
-// Crear invoice
-const invoice = await client.makeInvoice({
-  amount: 1000, // sats
-  description: "Pago de prueba"
-});
-
-console.log(invoice.paymentRequest); // bolt11 invoice
-
-// Pagar invoice
-const response = await client.payInvoice({
-  invoice: "lnbc..."
-});
-```
-
-## 💸 Lightning Address
-
-Enviar pagos a Lightning Addresses (user@domain.com):
-
-```javascript
-import { LightningAddress } from "@getalby/lightning-tools";
-
-// Resolver Lightning Address
-const ln = new LightningAddress("claudio@lacrypta.ar");
-await ln.fetch();
-
-// Generar invoice de 1000 sats
-const invoice = await ln.requestInvoice({ satoshi: 1000 });
-console.log(invoice.paymentRequest);
-
-// Info del destinatario
-console.log(ln.lnurlpData);
-```
-
-## 🔗 LNURL-pay
-
-Pagar usando LNURL:
-
-```javascript
-import { requestInvoice } from "@getalby/lightning-tools";
-
-// Desde LNURL
-const invoice = await requestInvoice({
-  lnUrlOrAddress: "lnurl1dp68gurn8ghj7...",
-  tokens: 1000 // sats
-});
-
-// Desde Lightning Address
-const invoice2 = await requestInvoice({
-  lnUrlOrAddress: "user@getalby.com",
-  tokens: 500
-});
-```
-
-## 🌐 WebLN (Browser)
-
-Para apps en el navegador con extensión de wallet:
-
-```javascript
-import { requestProvider } from "webln";
-
-// Conectar con wallet del navegador (Alby, etc)
-const webln = await requestProvider();
-
-// Enviar pago
-await webln.sendPayment("lnbc...");
-
-// Crear invoice
-const invoice = await webln.makeInvoice({
-  amount: 1000,
-  defaultMemo: "Pago desde mi app"
-});
-```
-
-## 📁 Estructura del proyecto
-
-```
-lightning-starter/
-├── src/
-│   ├── examples/           # Ejemplos para correr con Node
-│   │   ├── create-invoice.js
-│   │   ├── pay-invoice.js
-│   │   ├── nwc-connect.js
-│   │   └── lnurl-pay.js
-│   ├── main.js             # Entry point del frontend
-│   └── lib/                # Utilidades reutilizables
-├── public/
-│   └── index.html          # Frontend de demo
-├── package.json
-└── README.md
-```
-
-## 🏃 Ejecutar ejemplos
+## Testing
 
 ```bash
-# Crear invoice con NWC
-npm run example:invoice
+# Tests básicos
+npm test
 
-# Pagar invoice
-npm run example:pay
-
-# Conectar wallet NWC
-npm run example:nwc
-
-# Pagar Lightning Address
-npm run example:lnurl
+# Tests exploratorios
+node tests/full-test.mjs
 ```
 
-> ⚠️ Para los ejemplos que usan NWC, necesitás configurar tu connection string en `.env`
+## Estructura
 
-## ⚙️ Configuración
-
-Crear archivo `.env`:
-
-```env
-# Tu Nostr Wallet Connect URL (desde Alby u otra wallet)
-NWC_URL=nostr+walletconnect://...
-
-# Opcional: tu Lightning Address para testing
-LIGHTNING_ADDRESS=tu@email.com
+```
+src/
+├── main.js              # Entry point
+├── App.js               # Componente principal
+├── components/
+│   ├── UserMenu.js      # Login dropdown
+│   ├── RoleSelector.js  # Selector de roles
+│   ├── CourseView.js    # Vista de curso
+│   └── UserProfile.js   # Perfil de usuario
+├── lib/
+│   ├── schema.js        # Validación
+│   └── constants.js     # Constantes
+└── styles/
+    └── main.css         # Estilos
 ```
 
-## 📚 Recursos
+## Modelo de Datos
 
-- [Lightning Network Docs](https://lightning.network/)
-- [Alby Developer Portal](https://guides.getalby.com/developer-guide)
-- [LNURL Specs](https://github.com/lnurl/luds)
-- [NWC Spec (NIP-47)](https://github.com/nostr-protocol/nips/blob/master/47.md)
-- [WebLN Docs](https://webln.dev)
+### Curso (Kind 30078)
 
-## 🎯 Ideas para la hackathon
+```json
+{
+  "kind": 30078,
+  "tags": [
+    ["d", "nosteach-curso-{id}"],
+    ["t", "nosteach"],
+    ["t", "curso"]
+  ],
+  "content": {
+    "titulo": "...",
+    "descripcion": "...",
+    "precio": 0,
+    "modulos": [...],
+    "evaluacion": { "preguntas": [...] }
+  }
+}
+```
 
-- **POS simple**: Terminal de punto de venta
-- **Tipping widget**: Botón de propinas para sitios web
-- **Pay-per-content**: Paywall para artículos/videos
-- **Split payments**: Dividir pagos entre múltiples wallets
-- **Subscriptions**: Pagos recurrentes con NWC
-- **Social payments**: Integrar zaps en tu app
+### Evaluación (Kind 1)
 
-## 🏆 Hackathon FOUNDATIONS - Marzo 2026
+```json
+{
+  "kind": 1,
+  "tags": [
+    ["e", "<curso-id>"],
+    ["t", "nosteach-evaluacion"]
+  ],
+  "content": "{\"respuestas\":[...],\"timestamp\":...}"
+}
+```
 
-Este starter es para la primera hackathon del programa:
+## Roadmap
 
-- **Fechas**: 3-31 de Marzo 2026
-- **Tema**: Lightning Payments Basics
-- **Premio**: 1,000,000 sats
-- **Info**: [hackaton.lacrypta.ar](https://hackaton.lacrypta.ar)
+### ✅ ETAPA 1: MVP - Fundamentos
+Completado: auth, roles, publicar cursos, tomar evaluaciones.
 
-## 🤝 Contribuir
+### ⏳ ETAPA 2: Pagos Lightning
+- Integración con Alby/NWC para criar invoices
+- Verificación de pago antes de mostrar contenido
+- Precio por curso y bonus por aprobar
 
-1. Fork este repo
-2. Creá tu feature branch (`git checkout -b mi-feature`)
-3. Commit tus cambios (`git commit -m 'Agregar feature'`)
-4. Push a la branch (`git push origin mi-feature`)
-5. Abrí un Pull Request
+### ⏸️ ETAPA 3: Evaluaciones Avanzadas
+### ⏸️ ETAPA 4: Patrocinios y Recompensas
+
+Ver `ROADMAP.md` para detalle completo.
+
+## Convenciones
+
+### URLs de Perfil
+- Perfiles públicos: `#/p/{npub1...}`
+- Ejemplo: `http://localhost:5173/#/p/npub1sn0wdenkukak0d9dfczzeacvhkrgz92ak56egt7vdgzn8pv2wfqqhrjdv9`
+
+### Display de Nombres
+- Con nombre: `nombre (abcd...4321)` (4 caracteres del pubkey al inicio y final)
+- Sin nombre: `npub (abcd...4321)`
+- Usar helper `formatAuthorName(name, pubkey)` en `src/lib/lightning.js`
+
+### Zaps
+- Modal con QR dinámico para pago anónimo
+- Polling cada 5 segundos para verificar pago
+- Botón "Cerrar" cambia de amarillo a verde cuando se efectiva el pago
+
+## Recursos
+
+- [Nostr Docs](https://nostr.com)
+- [NIP-19: Keys and Identifiers](https://github.com/nostr-protocol/nips/blob/master/19.md)
+- [NIP-21: nostr: URI scheme](https://github.com/nostr-protocol/nips/blob/master/21.md)
+- [NIP-78: App-specific Data](https://github.com/nostr-protocol/nips/blob/master/78.md)
+- [Lightning Network](https://lightning.network/)
+- [Alby Developer](https://guides.getalby.com/developer-guide)
 
 ---
 
-Hecho con ⚡ por [La Crypta](https://lacrypta.ar)
+## Desafío Autoimpuesto
+
+Este proyecto se desarrolla con **cero presupuesto**.  
+El desarrollador (Langostero) es una instancia de [opencode](https://opencode.ai) corriendo en una computadora local, conectada a modelos gratuitos de IA.
+
+---
+
+Hecho con ⚡ por Fred (fchurca)

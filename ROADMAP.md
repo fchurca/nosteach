@@ -48,16 +48,96 @@ La educación online actual está centralizada en plataformas que:
 | Capa | Tecnología |
 |------|-------------|
 | Frontend | Vite |
-| Nostr | NDK (@nostr-dev-kit/ndk) |
+| Nostr | nostr-tools (WebSocket directo) |
 | Pagos | @getalby/sdk (NWC), webln |
 | Storage | Relays Nostr (NIP-78) |
 | Auth | Nostr keypair (NIP-07) |
+| Tests | Playwright |
+
+---
+
+## 🔐 Sistema de Roles y Permisos
+
+### Roles disponibles
+
+| Rol | Descripcion |
+|-----|-------------|
+| Teacher | Puede publicar cursos y zappear students |
+| Student | Puede tomar evaluaciones y zappear teachers |
+| Sponsor | Puede zappear teachers y students, patrocinar cursos |
+
+### Matriz de permisos
+
+| Feature | Teacher | Student | Sponsor | Publico |
+|---------|---------|---------|---------|---------|
+| Ver cursos | ✅ | ✅ | ✅ | ✅ |
+| Publicar curso | ✅ | ❌ | ❌ | ❌ |
+| Tomar evaluacion | ❌ | ✅ | ❌ | ❌ |
+| Zap a teachers | ❌ | ✅ | ✅ | ❌ |
+| Zap a students | ✅ | ❌ | ✅ | ❌ |
+| Patrocinar | ❌ | ❌ | ✅ | ❌ |
+
+**Notas:**
+- Teacher no zappea teacher
+- Roles son simultaneos y acumulativos
+- Se persisten en localStorage (para MVP)
+
+### Perfil de usuario (kind 0)
+
+```json
+{
+  "name": "...",
+  "display_name": "...",
+  "picture": "...",
+  "lud16": "user@lightning.address",
+  "lnurl": "lnurl...",
+  "nosteach_roles": {
+    "teacher": true,
+    "student": false,
+    "sponsor": true
+  },
+  "nosteach_zapper": "delegated",
+  "nosteach_nwc": "nostr+walletconnect://..."
+}
+```
+
+### Zap flow
+
+```
+Zap
+├── Delegated (default): genera LNURL/QR para wallet externa
+└── NWC (opcional): usa NWC del perfil kind 0
+
+Configuracion en kind 0:
+- nosteach_zapper: "delegated" | "nwc"
+- nosteach_nwc: URL NWC (opcional)
+```
+
+### Preguntas resueltas
+
+| Pregunta | Respuesta |
+|----------|-----------|
+| Persistencia roles | localStorage (para MVP) |
+| Config zapper | kind 0 |
+| Zap recipients | Del kind 0 del usuario (lud16/lnurl) |
+| Student evaluation | Contenido visible → toma evaluacion (gratis) |
+| Teacher respuestas | Query manual a relays (dashboard en Social) |
+
+### Pending items (Social Stage)
+
+- Limite de inscriptos
+- Browser publico (filtrar cursos publicos vs todos)
+- Suscripciones
+- Identificacion de students/teachers por curso
+- Notificaciones
+- Dashboard de respuestas para teachers
+- Sincronizar roles a kind 0
 
 ---
 
 ## 📅 ROADMAP
 
-### 🟢 ETAPA 1: MVP - Fundamentos (Semana 1)
+### 🚧 ETAPA 1: MVP - Fundamentos (COMPLETADO)
 
 **Objetivo**: Demo funcional de publicación y consumo de cursos
 
@@ -108,11 +188,15 @@ src/
 │   ├── NostrConnect.js      # Conexión wallet
 │   ├── CourseList.js        # Lista de cursos
 │   ├── CourseCard.js        # Card individual
-│   ├── CourseView.js        # Vista de curso
+│   ├── CourseView.js        # Vista de curso + pagos
 │   ├── CourseForm.js       # Form crear curso (maestro)
-│   └── EvaluationForm.js    # Tomar evaluación
+│   ├── EvaluationForm.js    # Tomar evaluación
+│   ├── ZapButton.js         # Botón de zap reutilizable
+│   ├── InvoiceModal.js      # Modal con QR y pago
+│   └── EvaluationList.js    # Lista de respuestas
 ├── lib/
 │   ├── nostr.js           # Wrapper NDK
+│   ├── lightning.js        # Wrapper WebLN + LNURL
 │   ├── schema.js           # Validación de datos
 │   └── constants.js        # Relays, kinds, precios
 └── styles/
@@ -162,51 +246,19 @@ src/
 
 #### Sprints
 
-| Sprint | Descripción | Complejidad |
-|--------|-------------|-------------|
-| 1.1 | Estructura del proyecto | Baja |
-| 1.2 | Conexión Nostr | Media |
-| 1.3 | Publicar curso (Maestro) | Media |
-| 1.4 | Listar cursos (Alumno) | Baja |
-| 1.5 | Ver curso y evaluar | Media |
-| 1.6 | Verificación | Baja |
-
-**Detalle de sprints:**
-
-**Sprint 1.1: Estructura del proyecto**
-- [ ] Crear estructura de carpetas
-- [ ] Configurar Vite con SDKs
-- [ ] Crear `.env` con configuración
-- [ ] Setup básico de CSS
-
-**Sprint 1.2: Conexión Nostr**
-- [ ] `lib/nostr.js`: connect, publish, query
-- [ ] `NostrConnect.js`: NIP-07 + fallback keys
-
-**Sprint 1.3: Publicar curso (Maestro)**
-- [ ] Schema de validación
-- [ ] `CourseForm.js`: título, desc, precio, módulos, evaluación
-- [ ] Publicar kind 30078
-
-**Sprint 1.4: Listar cursos (Alumno)**
-- [ ] Query kind 30078 filtrado por "nosteach-curso-"
-- [ ] `CourseList.js` + `CourseCard.js`
-
-**Sprint 1.5: Ver curso y evaluar**
-- [ ] `CourseView.js`: renderizar módulos
-- [ ] `EvaluationForm.js`: preguntas + submit kind 1
-- [ ] Easter egg: validación custom > 21M BTC
-
-**Sprint 1.6: Verificación**
-- [ ] Test end-to-end
-- [ ] Verificar en Primal
-- [ ] Limpiar código
-
-**Estimación total**: 2-3 días
+| Sprint | Descripción | Estado |
+|--------|-------------|--------|
+| 1.1 | Estructura del proyecto | ✅ Completado |
+| 1.2 | Conexión Nostr + Publicar/Lista cursos | ✅ Completado |
+| 1.3 | Publicar curso (Maestro) | ✅ Completado |
+| 1.4 | Listar cursos (Alumno) | ✅ Completado |
+| 1.5 | Sistema de Roles y Navegación | ✅ Completado |
+| 1.6 | Ver curso y evaluar | ✅ Completado |
+| 1.7 | Verificación | ✅ Completado |
 
 ---
 
-### 🟡 ETAPA 2: Pagos Lightning (Semana 2)
+### ✅ ETAPA 2: Pagos Lightning (COMPLETADO)
 
 **Objetivo**: Monetización de cursos
 
@@ -227,10 +279,14 @@ Alumno clickea "Inscribirse"
 ```
 
 **Entregables**:
-- [ ] Integración con Alby/NWC para criar invoices
-- [ ] Verificación de pago antes de mostrar contenido
-- [ ] Configurar precio por curso
-- [ ] Bonus por aprobar evaluación
+- [x] Integración con WebLN (Alby) para pagos
+- [x] Invoice modal con QR code
+- [x] Pagos para evaluaciones (student paga para enviar respuestas)
+- [x] Zap a profesores (sponsor zap unconditional)
+- [x] Premiar a estudiantes (teacher zap student)
+- [x] Ver respuestas de evaluaciones (teacher dashboard)
+- [ ] Invoice estáticas para patrocinios recurrentes (próximo sprint)
+- [ ] NWC para conectar wallet propia (próximo sprint)
 
 ---
 

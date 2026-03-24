@@ -1,0 +1,138 @@
+# Changelog - NosTeach
+
+## 2026-03-19 (UX Fixes + Payment Monitoring)
+
+### Added
+- **Monitoreo de pagos**: InvoiceModal ahora usa InvoiceTracker para verificar pagos desde cualquier wallet
+  - Polling cada 3 segundos
+  - Verificación via APIs externas (lightningvisuals, lnlookup)
+  - Verificación via WebLN si está disponible
+  - Payment hash extraído del invoice para tracking
+
+### Fixed
+- **Navbar responsive**: Nav ahora tiene `flex-wrap` y `gap` reducido para caber en móvil
+- **Botón duplicado**: Eliminado "Crear Curso" del grid home (ya estaba en nav)
+- **Labels de accesibilidad**: Agregados `<label>` a todos los inputs del form de crear curso
+- **Contraste**: Opacidad de texto secundario mejorada de 0.4 a 0.6
+- **Border-radius unificado**: Reducido de 16px/8px a 10px/6px
+- **Header compacto**: Reducido altura de h1 y padding del body
+- **Botón eliminar módulo/pregunta**: Agregado botón × para remover items dinámicos
+- **CTA Instalar Alby**: Botón "Instalar Alby" visible cuando WebLN no está disponible
+- **Estados vacíos mejorados**: Mensajes más amigables con emoji y CTA
+
+---
+
+## 2026-03-19 (Sprint 2 - Lightning Payments)
+
+### Added
+- **Lightning wrapper** (`src/lib/lightning.js`)
+  - WebLN integration (Alby)
+  - LNURL-pay para generar invoices dinámicas
+  - QR code generation con `qrcode` library
+  - InvoiceTracker para observar estado de pago
+- **ZapButton component** (`src/components/ZapButton.js`)
+  - Montos predefinidos: 21, 69, 210, 690 sats
+  - Custom amount
+  - Estados: idle, loading, success, error
+- **InvoiceModal component** (`src/components/InvoiceModal.js`)
+  - QR code para escanear con wallet
+  - Botón "Pagar con Alby"
+  - Countdown timer (10 min expiry)
+  - Estados visuales: pending, success, error, expired
+- **EvaluationList component** (`src/components/EvaluationList.js`)
+  - Teacher ve respuestas de alumnos
+  - Badge de correctas/incorrectas
+  - Botón "Premiar" para enviar sats a estudiantes
+- **Navegación "Mis Cursos"** para profesores
+- **Tests de lightning** (`tests/lightning.mjs`)
+
+### Changed
+- **CourseView** ahora tiene sección de pago para evaluaciones
+- Student paga antes de tomar evaluación si el curso tiene precio
+- Sponsor ve botón "Patrocinar al Profesor" con ZapButton
+- Teacher ve botón "Ver Respuestas" para cada curso con evaluación
+
+### Technical
+- Dependencia agregada: `qrcode`
+- Estilos CSS para modales y componentes de lightning
+- Integración con WebLN (`window.webln`)
+- Query kind:1 filtrado por `#e:<courseId>` para evaluaciones
+
+---
+
+## 2026-03-18 (Part 9)
+
+### Changed
+- Header button now says "Iniciar sesión" instead of "Conectar" when not logged in
+- User button now shows profile name (e.g., "debbie") after profile loads
+- Course view attempts to show teacher name, falls back to pubkey if not available
+- Increased relay query timeout to 5s for better profile fetching
+
+---
+
+### Fixed
+- Session state now syncs correctly between UserMenu and App (Home shows "Conectado como" after refresh)
+- Course form now validates using validateCurso() schema
+- CourseView now receives roles from App state instead of localStorage directly
+- Relay queries now have 15s timeout with retry button
+
+### Technical
+- Added timeout handling for course list queries
+- CourseView accepts roles as parameter for proper state management
+
+---
+
+## 2026-03-18 (Part 4)
+
+### Fixed
+- Mi Cuenta now shows user info correctly when logged in
+- Home page now shows "Acerca de NosTeach" instead of roles matrix
+
+### Changed
+- Permissions table replaced with positive descriptions in "Acerca de NosTeach"
+- Mi Cuenta shows "Editar Roles" button
+
+---
+
+## 2026-03-18 (Part 2)
+
+### Added
+- RoleSelector component with checkboxes (teacher/student/sponsor)
+- Role persistence in localStorage
+- Navigation based on active roles
+- Permission matrix implementation
+- UserProfile component
+- Playwright E2E tests (13 tests passing)
+
+### Technical
+- Fixed: SimplePool not working with Vite bundler
+- Fixed: WebSocket relay connection via custom implementation
+- Added: Relay failover (damus.io, nos.lol, nostr.band)
+
+---
+
+## 2026-03-18
+
+### Added
+- NostrConnect component with WebSocket direct (no SimplePool dependency)
+- Course publishing to relays (kind 30078)
+- Course listing from relays with tag filtering
+- nsec login with NIP-19 decode
+- Session persistence in localStorage
+- User profile fetching (kind 0)
+- Docker setup (Dockerfile + docker-compose.yml)
+
+### Stack
+- Vite + nostr-tools
+- WebSocket direct to relays
+- localStorage for session
+
+---
+
+## [Unreleased] - Future releases
+
+### Planned
+- Course view with modules rendering
+- Evaluation form (kind 1 responses)
+- Lightning payments (NWC/LNURL)
+- Sponsor system

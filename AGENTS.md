@@ -1,130 +1,279 @@
-# CLAUDE.md — Instrucciones para Claude Code
+# AGENTS.md — Instrucciones para Agentes de Código
 
-## Contexto
+## Contexto del Proyecto
 
-Este es el **Lightning Starter Kit** para las Lightning Hackathons 2026 de La Crypta.
-https://hackaton.lacrypta.ar/hackathons/foundations.html
+**NosTeach** es una plataforma educativa descentralizada construida sobre Nostr.
+- **Hackathon**: FOUNDATIONS - La Crypta Lightning Hackathons 2026
+- **Premio**: 1,000,000 sats
+- **Info**: https://hackaton.lacrypta.ar/hackathons/foundations.html
 
-El usuario que clonó este repo quiere construir un proyecto con Lightning Network para participar en la hackathon.
+### Concepto
 
-## Tu tarea
+NosTeach permite:
+- **Profesores** publicar cursos como eventos Nostr (kind 30078)
+- **Alumnos** consumir contenido y tomar evaluaciones
+- **Patrocinadores** apoyar con zaps Lightning
 
-1. **Saludar** y presentarte como asistente de la hackathon
-2. **Preguntar** si tiene una idea de proyecto
-3. Si **no tiene idea**, ofrecer 5 opciones concretas
-4. **Guiar** la construcción paso a paso
-5. **Explicar** mientras codeas
+### Stack Técnico
 
-## Primera interacción
+| Capa | Tecnología |
+|------|------------|
+| Frontend | Vite + Vanilla JS |
+| Nostr | nostr-tools (WebSocket directo a relays) |
+| Pagos | @getalby/sdk (NWC), webln |
+| Storage | Relays Nostr (NIP-78) |
+| Auth | Nostr keypair (nsec) |
+| Tests | Playwright |
 
-Empezá con algo así:
-
-```
-¡Hola! ⚡ Soy tu asistente para la Lightning Hackathon de La Crypta.
-
-Estás en el Starter Kit oficial con todas las herramientas listas:
-• NWC (Nostr Wallet Connect)
-• Lightning Address
-• LNURL
-• WebLN
-
-¿Ya tenés una idea de lo que querés construir?
-
-Si no, puedo proponerte 5 ideas según tu nivel:
-1. 🟢 Básico — Tip Jar, QR Generator, Paywall
-2. 🟡 Intermedio — POS, Split Payments, Donations
-3. 🔴 Avanzado — Streaming Payments, Escrow, API Monetization
-
-Contame qué te gustaría hacer (o decime tu nivel y te propongo opciones).
-```
-
-## Herramientas instaladas
-
-Ya están en `package.json`:
-- `@getalby/sdk` — SDK completo de Alby (NWC, etc)
-- `@getalby/lightning-tools` — Lightning Address, LNURL
-- `@nostr-dev-kit/ndk` — SDK de Nostr
-- `webln` — Standard para wallets en browser
-
-## Ejemplos disponibles
-
-En `src/examples/`:
-- `create-invoice.js` — Crear invoice con NWC
-- `pay-invoice.js` — Pagar invoice
-- `nwc-connect.js` — Conectar wallet
-- `lnurl-pay.js` — Resolver Lightning Address
-
-## Flujo de trabajo sugerido
+### Relays en Uso
 
 ```
-1. Definir idea → "¿Qué querés construir?"
-2. MVP features → "¿Cuáles son las 3 cosas esenciales?"
-3. Crear estructura → Archivos y carpetas
-4. Implementar core → La lógica principal
-5. Agregar UI → Frontend básico
-6. Testing → Probar con wallet real
-7. Polish → README, demo, presentación
+nos.lol, relay.damus.io, purplepag.es, filter.nostr.wine, relay.snort.social, inbox.nostr.wine
 ```
 
-## Código de ejemplo rápido
+Nota: Algunos relays no funcionan (nostr.band, e.nostrar.io).
 
-### Crear invoice
-```javascript
-import { nwc } from "@getalby/sdk";
+### Usuario de Testing
 
-const client = new nwc.NWCClient({ 
-  nostrWalletConnectUrl: "nostr+walletconnect://..." 
-});
+Los datos de testing están en `.secrets` (NO COMMITEAR):
+- Copiar `.secrets.example` a `.secrets` y completar
+- O setear `TEST_NSEC` como variable de entorno
+- **nombre**: debbie
 
-const invoice = await client.makeInvoice({
-  amount: 1000, // sats
-  description: "Mi pago"
-});
+---
 
-console.log(invoice.paymentRequest);
-```
+## Reglas de Trabajo
 
-### Lightning Address
-```javascript
-import { LightningAddress } from "@getalby/lightning-tools";
+### Comunicação
 
-const ln = new LightningAddress("user@getalby.com");
-await ln.fetch();
-
-const invoice = await ln.requestInvoice({ satoshi: 100 });
-```
-
-### WebLN (browser)
-```javascript
-const webln = await window.webln.enable();
-await webln.sendPayment("lnbc...");
-```
-
-## Reglas importantes
-
-1. **Preguntá antes de asumir** — No empieces a codear sin entender qué quiere
+1. **No asumas** — Preguntá antes de hacer cambios grandes
 2. **Explicá mientras hacés** — El usuario está aprendiendo
 3. **Código funcional** — Mejor poco y funcionando que mucho y roto
 4. **Testea** — Siempre verificá que compile y corra
 5. **Sé práctico** — Menos teoría, más ejemplos
 
-## Info de la Hackathon
+### Idioma
 
-- **Nombre**: FOUNDATIONS
-- **Tema**: Lightning Payments Basics
-- **Fechas**: Marzo 2026 (martes 3, 10, 17, 24, 31)
-- **Premio**: 1,000,000 sats
-- **Landing**: https://hackaton.lacrypta.ar
+- **Interfaz**: Castellano rioplatense neutro (como noticiero argentino)
+- **No lunfardismos** — Evitar "tecate", "pibe", "che", "boludo", etc.
+- **Comandos en inglés** para código, comentarios técnicos
 
-## Cuando terminen
+### Code Style
 
-Ayudá al usuario a:
+1. **Sin comentarios** a menos que el usuario los pida
+2. **Clases** para componentes (no hooks de React)
+3. **CSS vanilla** con variables CSS
+4. **WebSocket directo** en vez de SimplePool (no funciona con Vite)
+
+### UI/UX
+
+- **Modales**: Si la pantalla es tan compleja que el usuario extrañaría cerrarla accidentalmente, no es un modal. Los modales deben poder cerrarse con ESC y con click fuera. Nunca se cierran automáticamente.
+
+- **Navegación**: El usuario debe poder navegar sin perder contexto.
+
+### Testing
+
+1. **Levantar el servidor primero**: `npm run dev` (corre en puerto 5173)
+2. **En otra terminal**: ejecutar `npm test` después de cambios
+3. **Playwright**: ya está instalado, requiere dependencias del sistema (`npx playwright install-deps chromium`)
+4. **Tests manuales**: abrir http://localhost:5173 en el browser
+
+### Lightning Wallet para Testing
+
+Crear wallet de prueba:
+```bash
+curl -X POST https://lncurl.lol
+```
+
+Respuesta: `nostr+walletconnect://...?lud16=username@getalby.com`
+
+Crear invoice para recibir sats (ej: 210 sats):
+```bash
+# 1. Obtener LNURLp del lightning address
+curl "https://username@getalby.com/.well-known/lnurlp/username"
+
+# 2. Crear invoice (amount en milisats)
+curl "https://getalby.com/lnurlp/username/callback?amount=210000"
+```
+
+Monitorear pago de invoice:
+```bash
+# Verificar estado (usar el verify URL del response o polling)
+curl "https://getalby.com/lnurlp/username/verify/{payment_hash}"
+```
+
+Guardar en `.secrets`:
+- NWC URL completa (privada)
+- Lightning address comentada
+
+---
+
+## Flujo de Trabajo
+
+### 1. Objetivo del Agente
+
+Hacer ganar al usuario en la hackathon. Construir un proyecto lo suficientemente bueno para ganar.
+
+### 2. Al Iniciar Sesión
+
+1. Leer `AGENTS.md` y `ROADMAP.md`
+2. Entender el estado actual del proyecto
+3. Verificar que el servidor corra en puerto 5173
+4. Correr tests: `npm test`
+
+### 3. Al Proponer Cambios
+
+- Explicar qué se va a hacer
+- Pedir confirmación antes de ejecutar
+- Después de cambios, comittear o proponer mensaje de commit
+
+### 4. Commit Messages
+
+Formato:
+```
+<tipo>: <descripción corta>
+
+<tipo> = feat | fix | chore | docs | test | refactor
+```
+
+Ejemplos:
+```
+feat: MVP exploratorio con auth Nostr y cursos básicos
+fix: session state sync entre UserMenu y App
+docs: actualizar ROADMAP con estado actual
+```
+
+---
+
+## Estructura del Proyecto
+
+```
+nosteach/
+├── src/
+│   ├── main.js              # Entry point
+│   ├── App.js               # Componente principal, routing
+│   ├── components/
+│   │   ├── UserMenu.js     # Login dropdown, sesión
+│   │   ├── RoleSelector.js # Selector de roles
+│   │   ├── CourseView.js   # Vista de detalle de curso
+│   │   └── UserProfile.js  # Perfil de usuario
+│   ├── lib/
+│   │   ├── schema.js       # Validación de datos
+│   │   └── constants.js    # Relays, kinds, precios
+│   └── styles/
+│       └── main.css        # Estilos
+├── tests/
+│   ├── e2e.mjs             # Tests básicos (13 pasando)
+│   └── full-test.mjs       # Tests exploratorios
+├── public/
+│   └── index.html
+├── README.md
+├── AGENTS.md               # Este archivo
+├── CHANGELOG.md
+├── ROADMAP.md
+└── package.json
+```
+
+---
+
+## Modelo de Datos
+
+### Curso (Kind 30078)
+
+```json
+{
+  "kind": 30078,
+  "tags": [
+    ["d", "nosteach-curso-{timestamp}-{random}"],
+    ["t", "nosteach"],
+    ["t", "curso"]
+  ],
+  "content": {
+    "titulo": "...",
+    "descripcion": "...",
+    "precio": 0,
+    "modulos": [
+      { "tipo": "texto", "contenido": "..." },
+      { "tipo": "enlace", "url": "...", "titulo": "..." }
+    ],
+    "evaluacion": {
+      "preguntas": [
+        { "pregunta": "...", "opciones": ["A","B","C"], "correcta": 0 }
+      ]
+    }
+  }
+}
+```
+
+### Evaluación (Kind 1)
+
+```json
+{
+  "kind": 1,
+  "tags": [
+    ["e", "<curso-event-id>"],
+    ["p", "<maestro-pubkey>"],
+    ["t", "nosteach-evaluacion"]
+  ],
+  "content": "{\"respuestas\":[0,2,1],\"timestamp\":...}"
+}
+```
+
+---
+
+## Roadmap Status
+
+### 🚧 ETAPA 1: MVP - Fundamentos (EN PROGRESO)
+- [ ] Estructura del proyecto
+- [ ] Conexión Nostr + Publicar/Lista cursos
+- [ ] Publicar curso (Maestro)
+- [ ] Listar cursos (Alumno)
+- [ ] Sistema de Roles y Navegación
+- [ ] Ver curso y evaluar
+- [ ] Verificación
+
+### ETAPA 2: Pagos Lightning ⏳ Pendiente
+- [ ] Integración con Alby/NWC para criar invoices
+- [ ] Verificación de pago antes de mostrar contenido
+- [ ] Configurar precio por curso
+- [ ] Bonus por aprobar evaluación
+
+### ETAPA 3: Evaluaciones Avanzadas ⏸️ Pendiente
+### ETAPA 4: Patrocinios y Recompensas ⏸️ Pendiente
+
+---
+
+## UX/UI Notes
+
+Del análisis de UX del 2026-03-19:
+
+### Problemas Críticos
+- Inputs sin labels (accesibilidad WCAG)
+- Contraste de texto insuficiente (opacity 0.4)
+- Dropdown muestra caracteres de formato
+- No hay validación en tiempo real en formularios
+
+### Mejoras Rápidas Sugeridas
+- Agregar skeleton loaders en vez de "Cargando..."
+- Toast notifications en vez de alerts nativos
+- Botón de eliminar para módulos/preguntas dinámicos
+- Breadcrumbs en páginas internas
+
+### Fraseo
+| Original | Sugerencia |
+|----------|------------|
+| "zapear" | "enviar un apoyo" o "apoyar con sats" |
+| "patrocionador" | "mecenas" o "financiador" |
+| "vive en relays" | "se almacena en relays" |
+| "publicá tu conocimiento" | "compartí tu conocimiento" |
+
+---
+
+## Al Finalizar la Hackathon
+
+Ayudar al usuario a:
 1. Escribir un buen README
 2. Grabar un demo (video o screenshots)
 3. Preparar el pitch de 3 minutos
 4. Subir el proyecto a GitHub
 5. Hacer PR agregando su proyecto a `data/projects/foundations.json` en el repo de la hackathon
-
-6. # Mi propósito como agente
-
-Mi propósito es hacerte ganar a vos como usuario. Quiero ayudarte a idear y construir un excelente proyecto, lo suficientemente bueno para ganar la Hackaton.

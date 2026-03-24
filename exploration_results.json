@@ -1,0 +1,166 @@
+{
+  "pages": {
+    "home": {
+      "url": "http://localhost:5173/",
+      "title": "⚡ NosTeach - Educación Descentralizada",
+      "h1Text": "⚡ NosTeach",
+      "buttons": [
+        "🏠 Inicio",
+        "📚 Explorar",
+        "✏️ Crear Curso",
+        "👤\n            Usuario\n            ▼",
+        "🔑 Iniciar sesión",
+        "×",
+        "Conectar",
+        "Ver Cursos"
+      ],
+      "navItems": [
+        "👤 Mi Cuenta",
+        "🎭 Mis Roles",
+        "🔌 Desconectar"
+      ]
+    },
+    "afterLogin": {
+      "url": "http://localhost:5173/"
+    },
+    "courses": {
+      "url": "http://localhost:5173/courses",
+      "courseCount": 3,
+      "buttons": [
+        "🏠 Inicio",
+        "📚 Explorar",
+        "✏️ Crear Curso",
+        "👤\n            Usuario\n            ▼",
+        "🔑 Iniciar sesión",
+        "×",
+        "Conectar",
+        "Ver Cursos"
+      ],
+      "filters": []
+    },
+    "createForm": {
+      "url": "http://localhost:5173/courses/create",
+      "formFields": [
+        {
+          "type": "password",
+          "name": "",
+          "placeholder": "Tu nsec (nsec1...)"
+        }
+      ],
+      "buttons": [
+        "🏠 Inicio",
+        "📚 Explorar",
+        "✏️ Crear Curso",
+        "👤\n            Usuario\n            ▼",
+        "🔑 Iniciar sesión",
+        "×",
+        "Conectar",
+        "Ver Cursos"
+      ]
+    },
+    "account": {
+      "url": "http://localhost:5173/account",
+      "h1": "⚡ NosTeach",
+      "sections": [
+        "👋 Bienvenido a NosTeach"
+      ]
+    },
+    "roles": {
+      "url": "http://localhost:5173/roles",
+      "h1": "⚡ NosTeach",
+      "content": [
+        "Plataforma educativa descentralizada",
+        "🏠 Inicio",
+        "📚 Explorar",
+        "✏️ Crear Curso",
+        "\n            👤\n            Usuario\n            ▼\n          ",
+        "\n            🔑 Iniciar sesión\n          ",
+        "×",
+        "Conectar",
+        "👋 Bienvenido a NosTeach",
+        "Ingresá tu nsec arriba para conectarte.",
+        "Ver todos los cursos disponibles en Nostr.",
+        "Ver Cursos",
+        "Plataforma educativa descentralizada construida sobre Nostr. Los profesores publ",
+        "\n          Todo el contenido vive en relays Nostr públicos. Sin suscripciones, s",
+        "\n            Lightning Hackathons 2026 · \n            La Crypta · \n            P"
+      ]
+    },
+    "interactiveElements": {
+      "buttons": [
+        {
+          "text": "🏠 Inicio",
+          "disabled": false
+        },
+        {
+          "text": "📚 Explorar",
+          "disabled": false
+        },
+        {
+          "text": "✏️ Crear Curso",
+          "disabled": false
+        },
+        {
+          "text": "👤\n            Usuario\n            ▼",
+          "disabled": false
+        },
+        {
+          "text": "🔑 Iniciar sesión",
+          "disabled": false
+        },
+        {
+          "text": "×",
+          "disabled": false
+        },
+        {
+          "text": "Conectar",
+          "disabled": false
+        },
+        {
+          "text": "Ver Cursos",
+          "disabled": false
+        }
+      ],
+      "links": [
+        {
+          "text": "👤 Mi Cuenta",
+          "href": "#"
+        },
+        {
+          "text": "🎭 Mis Roles",
+          "href": "#"
+        },
+        {
+          "text": "🔌 Desconectar",
+          "href": "#"
+        },
+        {
+          "text": "Lightning Hackathons 2026",
+          "href": "https://hackaton.lacrypta.ar"
+        },
+        {
+          "text": "La Crypta",
+          "href": "https://lacrypta.ar"
+        }
+      ]
+    },
+    "states": {
+      "loadingElements": 0,
+      "emptyElements": 0,
+      "errorElements": 0
+    }
+  },
+  "screenshots": [
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/01_home.png",
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/02_login_form.png",
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/03_nostr_trigger.png",
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/04_nsec_filled.png",
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/05_after_login.png",
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/06_courses_list.png",
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/07_course_detail_direct.png",
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/08_course_create_form.png",
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/09_account_page.png",
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/10_roles_page.png",
+    "/var/lib/opencode/workspace/lightning-starter/screenshots/11_home_complete.png"
+  ]
+}
