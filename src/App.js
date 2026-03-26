@@ -6,6 +6,7 @@ import EvaluationList from './components/EvaluationList.js';
 import { validateCurso } from './lib/schema.js';
 import { formatAuthorName } from './lib/lightning.js';
 import { nip19 } from 'nostr-tools';
+import { DEBUG } from './lib/constants.js';
 
 class App {
   constructor() {
@@ -26,7 +27,7 @@ class App {
       await connect();
       const { getNDK } = await import('./lib/nostr.js');
       this.nostr = getNDK();
-      console.log('Nostr (read-only) inicializado');
+      if (DEBUG) console.log('Nostr (read-only) inicializado');
     } catch (err) {
       console.warn('Error inicializando NDK:', err.message);
     }
@@ -84,7 +85,7 @@ class App {
   onNostrConnect(pubkey, nostrInstance) {
     this.pubkey = pubkey;
     this.nostr = nostrInstance;
-    console.log('Nostr conectado:', pubkey);
+    if (DEBUG) console.log('Nostr conectado:', pubkey);
     this.loadRoles();
     this.refreshCurrentView();
   }
@@ -106,7 +107,7 @@ class App {
     this.roles = { teacher: false, student: false, sponsor: false };
     this.updateNav();
     await this.initNostrReadOnly();
-    console.log('Sesión cerrada. reconectado en modo lectura');
+    if (DEBUG) console.log('Sesión cerrada. reconectado en modo lectura');
   }
 
   onRolesChange(roles) {

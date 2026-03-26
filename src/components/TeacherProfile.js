@@ -1,5 +1,6 @@
 import { formatAuthorName, getLud16, ZAP_AMOUNTS } from '../lib/lightning.js';
 import ZapModal from './ZapModal.js';
+import { DEBUG } from '../lib/constants.js';
 
 class TeacherProfile {
   constructor(container, pubkey, nostr) {
@@ -141,7 +142,7 @@ class TeacherProfile {
       amounts: ZAP_AMOUNTS,
       customMax: 10000,
       onSuccess: (result, amount) => {
-        console.log('Zap exitoso:', result);
+        if (DEBUG) console.log('Zap exitoso:', result);
       },
       onError: (err) => {
         console.error('Error en zap:', err);

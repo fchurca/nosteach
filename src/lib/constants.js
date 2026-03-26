@@ -6,6 +6,16 @@ export const DEFAULT_RELAYS = [
   'wss://filter.nostr.wine'
 ];
 
+const params = new URLSearchParams(window.location.search);
+if (params.has('debug')) {
+  if (params.get('debug') === 'true') {
+    localStorage.setItem('debug', 'true');
+  } else {
+    localStorage.removeItem('debug');
+  }
+}
+export const DEBUG = localStorage.getItem('debug') === 'true';
+
 export const PRECIOS = [
   { label: 'Gratis', value: 0 },
   { label: '21 sats', value: 21 },

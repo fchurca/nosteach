@@ -1,4 +1,5 @@
 import { generateQRCode, generateInvoice, sendPayment, isWebLNAvailable, getLnurlpInfo, InvoiceTracker } from '../lib/lightning.js';
+import { DEBUG } from '../lib/constants.js';
 
 class InvoiceModal {
   constructor(options = {}) {
@@ -23,10 +24,10 @@ class InvoiceModal {
   }
   
   async show() {
-    console.log('[InvoiceModal] show() called');
+    if (DEBUG) console.log('[InvoiceModal] show() called');
     this.createOverlay();
     await this.generateInvoiceAndShow();
-    console.log('[InvoiceModal] show() completed');
+    if (DEBUG) console.log('[InvoiceModal] show() completed');
   }
   
   createOverlay() {
@@ -64,7 +65,7 @@ class InvoiceModal {
   }
   
   async generateInvoiceAndShow() {
-    console.log('[InvoiceModal] generateInvoiceAndShow called, lud16:', this.lud16, 'amount:', this.amount);
+    if (DEBUG) console.log('[InvoiceModal] generateInvoiceAndShow called, lud16:', this.lud16, 'amount:', this.amount);
     try {
       const result = await generateInvoice(this.lud16, this.amount, this.description);
       this.invoice = result.invoice;
@@ -72,10 +73,10 @@ class InvoiceModal {
       this.verifyUrl = result.verifyUrl;
       this.qrDataUrl = await generateQRCode(this.invoice);
       await this.showInvoiceForm();
-      console.log('[InvoiceModal] About to call startCountdown and startPolling');
+      if (DEBUG) console.log('[InvoiceModal] About to call startCountdown and startPolling');
       this.startCountdown();
       this.startPolling();
-      console.log('[InvoiceModal] startCountdown and startPolling called');
+      if (DEBUG) console.log('[InvoiceModal] startCountdown and startPolling called');
     } catch (err) {
       this.showError(err.message);
       this.onError(err);
@@ -83,7 +84,7 @@ class InvoiceModal {
   }
 
   startPolling() {
-    console.log('[InvoiceModal] startPolling called, invoice:', this.invoice?.slice(0, 30), 'verifyUrl:', this.verifyUrl);
+    if (DEBUG) console.log('[InvoiceModal] startPolling called, invoice:', this.invoice?.slice(0, 30), 'verifyUrl:', this.verifyUrl);
     this.tracker = new InvoiceTracker(this.invoice, (status, data) => {
       if (status === 'paid') {
         this.handlePaymentSuccess(data);
@@ -97,7 +98,7 @@ class InvoiceModal {
       verifyUrl: this.verifyUrl
     });
     this.tracker.start(2000, 600000);
-    console.log('[InvoiceModal] tracker.start() called, tracker:', !!this.tracker);
+    if (DEBUG) console.log('[InvoiceModal] tracker.start() called, tracker:', !!this.tracker);
   }
 
   stopPolling() {
@@ -108,7 +109,7 @@ class InvoiceModal {
   }
   
   async showInvoiceForm() {
-    console.log('[InvoiceModal] showInvoiceForm called');
+    if (DEBUG) console.log('[InvoiceModal] showInvoiceForm called');
     this.state = 'pending';
     const content = document.getElementById('invoice-content');
     

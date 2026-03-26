@@ -77,6 +77,28 @@ npm test
 node tests/full-test.mjs
 ```
 
+## Debug Mode
+
+Para habilitar logs de debug en la consola del browser:
+
+### Opción 1: URL param
+Agregar `?debug=true` a la URL:
+```
+http://localhost:5173/?debug=true
+```
+
+### Opción 2: localStorage
+Ejecutar en la consola del browser:
+```javascript
+localStorage.setItem('debug', 'true')
+```
+O para desactivar:
+```javascript
+localStorage.removeItem('debug')
+```
+
+El flag se mantiene en localStorage hasta que se desactive manualmente o con `?debug=false` en la URL.
+
 ## Estructura
 
 ```

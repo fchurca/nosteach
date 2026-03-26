@@ -56,8 +56,25 @@ Los datos de testing están en `.secrets` (NO COMMITEAR):
      const secrets = readFileSync('.secrets', 'utf-8');
      const match = secrets.match(/MY_SECRET=(.+)/);
      if (match) MY_SECRET = match[1];
-   }
+    }
+    ```
+
+### Debug Mode
+
+Para habilitar logs de debug en la consola del browser:
+
+1. **URL param**: Agregar `?debug=true` a la URL
    ```
+   http://localhost:5173/?debug=true
+   ```
+
+2. **localStorage**: Ejecutar en la consola:
+   ```javascript
+   localStorage.setItem('debug', 'true')
+   ```
+   Para desactivar: `localStorage.removeItem('debug')` o `?debug=false` en la URL.
+
+El flag se mantiene en localStorage hasta que se desactive manualmente.
 
 ### Git Operations
 

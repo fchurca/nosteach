@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { DEBUG } from './constants.js';
 
 export const ZAP_AMOUNTS = [21, 69, 210, 690];
 
@@ -147,7 +148,7 @@ export async function generateInvoice(lud16, amountSats, comment = '') {
     const data = await response.json();
     
     if (data.successAction) {
-      console.log('[generateInvoice] Success action:', data.successAction);
+      if (DEBUG) console.log('[generateInvoice] Success action:', data.successAction);
     }
     
     if (data.status === 'ERROR') {
@@ -155,7 +156,7 @@ export async function generateInvoice(lud16, amountSats, comment = '') {
     }
     
     const paymentHash = extractPaymentHash(data.pr);
-    console.log('[generateInvoice] Payment hash extracted:', paymentHash);
+    if (DEBUG) console.log('[generateInvoice] Payment hash extracted:', paymentHash);
     
     let verifyUrl = null;
     if (lnurlpInfo.verify) {
@@ -164,7 +165,7 @@ export async function generateInvoice(lud16, amountSats, comment = '') {
       const callbackBase = lnurlpInfo.callback.replace(/\/$/, '');
       verifyUrl = `${callbackBase}/verify/${paymentHash}`;
     }
-    console.log('[generateInvoice] Verify URL:', verifyUrl);
+    if (DEBUG) console.log('[generateInvoice] Verify URL:', verifyUrl);
     
     return {
       invoice: data.pr,
@@ -286,18 +287,18 @@ export class InvoiceTracker {
   }
   
   start(pollIntervalMs = 5000, maxDurationMs = 600000) {
-    console.log('[InvoiceTracker] start() called with interval:', pollIntervalMs, 'ms');
+    if (DEBUG) console.log('[InvoiceTracker] start() called with interval:', pollIntervalMs, 'ms');
     this.setStatus('pending');
     
     this.pollIntervalMs = pollIntervalMs;
     
-    console.log('[InvoiceTracker] Setting up setInterval for checkStatus every', pollIntervalMs, 'ms');
+    if (DEBUG) console.log('[InvoiceTracker] Setting up setInterval for checkStatus every', pollIntervalMs, 'ms');
     this.intervalId = setInterval(() => {
-      console.log('[InvoiceTracker] setInterval triggered, calling checkStatus');
+      if (DEBUG) console.log('[InvoiceTracker] setInterval triggered, calling checkStatus');
       this.checkStatus();
     }, pollIntervalMs);
     
-    console.log('[InvoiceTracker] intervalId:', this.intervalId);
+    if (DEBUG) console.log('[InvoiceTracker] intervalId:', this.intervalId);
     this.subscribeToNostr();
     
     this.timeoutId = setTimeout(() => {
@@ -312,11 +313,11 @@ export class InvoiceTracker {
   
   subscribeToNostr() {
     if (!this.paymentHash && !this.recipientPubkey) {
-      console.log('[InvoiceTracker] No paymentHash or recipientPubkey, skipping Nostr subscription');
+      if (DEBUG) console.log('[InvoiceTracker] No paymentHash or recipientPubkey, skipping Nostr subscription');
       return;
     }
     
-    console.log('[InvoiceTracker] Starting Nostr subscription for zap receipts...');
+    if (DEBUG) console.log('[InvoiceTracker] Starting Nostr subscription for zap receipts...');
     
     const filters = { kinds: [9735] };
     
@@ -328,7 +329,7 @@ export class InvoiceTracker {
       filters['#p'] = [this.recipientPubkey];
     }
     
-    console.log('[InvoiceTracker] Nostr filter:', filters);
+    if (DEBUG) console.log('[InvoiceTracker] Nostr filter:', filters);
     
     for (const relay of this.relays) {
       try {
@@ -344,25 +345,25 @@ export class InvoiceTracker {
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            console.log('[InvoiceTracker] Relay message:', data[0], 'from', relay);
+            if (DEBUG) console.log('[InvoiceTracker] Relay message:', data[0], 'from', relay);
             if (data[0] === 'EVENT' && data[1] === subId) {
               const zapReceipt = data[2];
-              console.log('[InvoiceTracker] Zap receipt received!', zapReceipt.id, 'kind:', zapReceipt.kind);
+              if (DEBUG) console.log('[InvoiceTracker] Zap receipt received!', zapReceipt.id, 'kind:', zapReceipt.kind);
               this.handleZapReceipt(zapReceipt);
             } else if (data[0] === 'EOSE') {
-              console.log('[InvoiceTracker] EOSE from', relay);
+              if (DEBUG) console.log('[InvoiceTracker] EOSE from', relay);
             }
           } catch (e) {
-            console.log('[InvoiceTracker] Message parse error:', e.message);
+            if (DEBUG) console.log('[InvoiceTracker] Message parse error:', e.message);
           }
         };
         
         ws.onerror = (e) => {
-          console.log('[InvoiceTracker] WS error from', relay);
+          if (DEBUG) console.log('[InvoiceTracker] WS error from', relay);
         };
         
         ws.onclose = (e) => {
-          console.log('[InvoiceTracker] WS closed from', relay, e.code);
+          if (DEBUG) console.log('[InvoiceTracker] WS closed from', relay, e.code);
         };
         
       } catch (e) {
@@ -377,7 +378,7 @@ export class InvoiceTracker {
     const amountTag = zapReceipt.tags.find(t => t[0] === 'amount');
     const amount = amountTag ? parseInt(amountTag[1], 10) : 0;
     
-    console.log('[InvoiceTracker] Payment detected via Nostr!', amount, 'sats');
+    if (DEBUG) console.log('[InvoiceTracker] Payment detected via Nostr!', amount, 'sats');
     this.setStatus('paid', {
       zapReceiptId: zapReceipt.id,
       amount,
@@ -387,7 +388,7 @@ export class InvoiceTracker {
   }
   
   async checkStatus() {
-    console.log('[InvoiceTracker] checkStatus() executed, attempt:', this.checkCount);
+    if (DEBUG) console.log('[InvoiceTracker] checkStatus() executed, attempt:', this.checkCount);
     this.checkCount++;
     
     if (this.status === 'paid' || this.status === 'failed' || this.status === 'expired') {
@@ -395,15 +396,15 @@ export class InvoiceTracker {
       return;
     }
     
-    console.log(`[InvoiceTracker] Checking invoice status... (attempt ${this.checkCount})`);
+    if (DEBUG) console.log(`[InvoiceTracker] Checking invoice status... (attempt ${this.checkCount})`);
     
     if (!this.paymentHash) {
       this.paymentHash = this.extractPaymentHashFromInvoice();
-      console.log('[InvoiceTracker] Extracted payment hash in checkStatus:', this.paymentHash);
+      if (DEBUG) console.log('[InvoiceTracker] Extracted payment hash in checkStatus:', this.paymentHash);
     }
     
     if (this.paymentHash) {
-      console.log('[InvoiceTracker] Calling checkWithExternalAPI');
+      if (DEBUG) console.log('[InvoiceTracker] Calling checkWithExternalAPI');
       const externalResult = await this.checkWithExternalAPI();
       if (externalResult === 'paid') {
         this.setStatus('paid', { paymentHash: this.paymentHash });
@@ -417,7 +418,7 @@ export class InvoiceTracker {
     }
     
     if (this.verifyUrl) {
-      console.log('[InvoiceTracker] Calling checkWithLnurlp');
+      if (DEBUG) console.log('[InvoiceTracker] Calling checkWithLnurlp');
       const lnurlpResult = await this.checkWithLnurlp();
       if (lnurlpResult === 'paid') {
         this.setStatus('paid', { via: 'lnurlp' });
@@ -432,14 +433,14 @@ export class InvoiceTracker {
     
     try {
       if (isWebLNAvailable()) {
-        console.log('[InvoiceTracker] WebLN available, checking...');
+        if (DEBUG) console.log('[InvoiceTracker] WebLN available, checking...');
         await window.webln.enable();
         const webln = window.webln;
         
         if (webln.lookupInvoice) {
           try {
             const invoiceData = await webln.lookupInvoice(this.invoice);
-            console.log('[InvoiceTracker] lookupInvoice result:', invoiceData);
+            if (DEBUG) console.log('[InvoiceTracker] lookupInvoice result:', invoiceData);
             if (invoiceData) {
               if (invoiceData.state === 'settled') {
                 this.setStatus('paid', invoiceData);
@@ -459,7 +460,7 @@ export class InvoiceTracker {
         if (webln.listPayments) {
           try {
             const payments = await webln.listPayments();
-            console.log('[InvoiceTracker] listPayments result:', payments?.length, 'payments');
+            if (DEBUG) console.log('[InvoiceTracker] listPayments result:', payments?.length, 'payments');
             const paidPayment = payments?.find(p => 
               p.invoice === this.invoice || 
               p.paymentHash === this.paymentHash ||
@@ -475,26 +476,26 @@ export class InvoiceTracker {
           }
         }
       } else {
-        console.log('[InvoiceTracker] WebLN not available, skipping WebLN checks');
+        if (DEBUG) console.log('[InvoiceTracker] WebLN not available, skipping WebLN checks');
       }
     } catch (err) {
       console.warn('Error checking invoice status:', err);
     }
     
-    console.log(`[InvoiceTracker] No payment detected yet, will retry in ${this.pollIntervalMs}ms`);
+    if (DEBUG) console.log(`[InvoiceTracker] No payment detected yet, will retry in ${this.pollIntervalMs}ms`);
   }
   
   extractPaymentHashFromInvoice() {
     try {
       const match = this.invoice.match(/^ln[a-z0-9]{1,1111}1([a-z0-9]{6,})/);
-      console.log('[InvoiceTracker] Invoice regex match:', match ? 'yes' : 'no');
+      if (DEBUG) console.log('[InvoiceTracker] Invoice regex match:', match ? 'yes' : 'no');
       if (match && match[1]) {
         const data = match[1];
-        console.log('[InvoiceTracker] Data part length:', data.length);
+        if (DEBUG) console.log('[InvoiceTracker] Data part length:', data.length);
         const sliced = data.slice(0, 104);
-        console.log('[InvoiceTracker] Sliced data:', sliced.length);
+        if (DEBUG) console.log('[InvoiceTracker] Sliced data:', sliced.length);
         const decoded = bech32ToHex(sliced);
-        console.log('[InvoiceTracker] Decoded hex:', decoded);
+        if (DEBUG) console.log('[InvoiceTracker] Decoded hex:', decoded);
         if (decoded && decoded.length >= 64) {
           return decoded.slice(0, 64);
         }
@@ -523,7 +524,7 @@ export class InvoiceTracker {
       const hostname = urlObj.hostname;
       
       if (hostname.includes('primal')) {
-        console.log('[InvoiceTracker] Primal verify not supported, relying on Nostr zap receipts');
+        if (DEBUG) console.log('[InvoiceTracker] Primal verify not supported, relying on Nostr zap receipts');
         return null;
       }
       
@@ -536,7 +537,7 @@ export class InvoiceTracker {
           if (hostname.includes('getalby')) proxyProvider = 'getalby';
           else if (hostname.includes('lnurl.social')) proxyProvider = 'lnurlsocial';
           fetchUrl = `/api/verify?hash=${proxyHash}&provider=${proxyProvider}`;
-          console.log('[InvoiceTracker] Using proxy:', fetchUrl);
+          if (DEBUG) console.log('[InvoiceTracker] Using proxy:', fetchUrl);
         }
       }
     } catch (e) {
@@ -548,40 +549,40 @@ export class InvoiceTracker {
     }
     
     try {
-      console.log('[InvoiceTracker] Attempting fetch to verifyUrl:', fetchUrl);
+      if (DEBUG) console.log('[InvoiceTracker] Attempting fetch to verifyUrl:', fetchUrl);
       const response = await fetch(fetchUrl, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         cache: 'no-cache'
       });
       
-      console.log('[InvoiceTracker] Fetch response status:', response.status, 'ok:', response.ok);
+      if (DEBUG) console.log('[InvoiceTracker] Fetch response status:', response.status, 'ok:', response.ok);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('[InvoiceTracker] LNURLp verify result keys:', Object.keys(data));
+        if (DEBUG) console.log('[InvoiceTracker] LNURLp verify result keys:', Object.keys(data));
         
         if (data.status === 'OK') {
           if (data.paid === true) {
-            console.log('[InvoiceTracker] Invoice PAID via LNURLp (paid=true)!');
+            if (DEBUG) console.log('[InvoiceTracker] Invoice PAID via LNURLp (paid=true)!');
             return 'paid';
           }
           
           if (data.preimage) {
-            console.log('[InvoiceTracker] Invoice PAID via LNURLp (has preimage)!');
+            if (DEBUG) console.log('[InvoiceTracker] Invoice PAID via LNURLp (has preimage)!');
             return 'paid';
           }
           
           if (data.successAction && data.successAction.tag === 'preimage') {
-            console.log('[InvoiceTracker] Invoice PAID via LNURLp (successAction)!');
+            if (DEBUG) console.log('[InvoiceTracker] Invoice PAID via LNURLp (successAction)!');
             return 'paid';
           }
           
           if (data.pr && data.pr !== this.invoice) {
-            console.log('[InvoiceTracker] New invoice returned - old one was likely paid');
+            if (DEBUG) console.log('[InvoiceTracker] New invoice returned - old one was likely paid');
             const newHash = extractPaymentHash(data.pr);
             if (newHash && newHash !== this.paymentHash) {
-              console.log('[InvoiceTracker] Invoice changed, considering paid');
+              if (DEBUG) console.log('[InvoiceTracker] Invoice changed, considering paid');
               return 'paid';
             }
           }

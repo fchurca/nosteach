@@ -49,14 +49,15 @@ Se usa `nosteach_roles` en algunos lugares y la constante `ROLES_KEY` (que vale 
 
 ---
 
-### ⏳ 3. Exceso de console.log
+### ✅ 3. Exceso de console.log
 **Ubicación**: Múltiples archivos (200+ statements)
 
 Hay demasiadas sentencias de debug que ensucian la consola en producción.
 
 **Solución**: 
-- Eliminar o condicionalmente ejecutar los console.log de debug
-- Mantener solo console.warn y console.error para errores reales
+- Flag `DEBUG` configurable via `?debug=true` en URL o localStorage
+- Todos los console.log ahora wrapped con `if (DEBUG)`
+- Documentado en README.md y AGENTS.md
 
 ---
 

@@ -1,5 +1,6 @@
 import { nip19 } from 'nostr-tools';
 import { getPublicKey, finalizeEvent } from 'nostr-tools/pure';
+import { DEBUG } from '../lib/constants.js';
 
 const RELAYS = [
   'wss://nos.lol',
@@ -260,7 +261,7 @@ class UserMenu {
   async fetchProfile() {
     if (!this.pubkey) return;
     
-    console.log('Fetching profile from relays...');
+    if (DEBUG) console.log('Fetching profile from relays...');
     
     try {
       const events = await this.query({
@@ -272,9 +273,9 @@ class UserMenu {
       if (events.length > 0) {
         const content = JSON.parse(events[0].content);
         this.profile = content;
-        console.log('Profile fetched:', this.profile?.name || this.profile?.display_name);
+        if (DEBUG) console.log('Profile fetched:', this.profile?.name || this.profile?.display_name);
       } else {
-        console.log('No profile found on relays');
+        if (DEBUG) console.log('No profile found on relays');
       }
     } catch (err) {
       console.warn('No se pudo obtener perfil:', err.message);
@@ -345,7 +346,7 @@ class UserMenu {
     // Log results per relay
     for (const { relay, events } of resultsArrays) {
       if (events.length > 0) {
-        console.log(`${relay}: ${events.length} events`);
+        if (DEBUG) console.log(`${relay}: ${events.length} events`);
       }
     }
     
@@ -361,7 +362,7 @@ class UserMenu {
       }
     }
     
-    console.log(`Total: ${results.length} events from ${RELAYS.length} relays`);
+    if (DEBUG) console.log(`Total: ${results.length} events from ${RELAYS.length} relays`);
     return results;
   }
 
@@ -438,7 +439,7 @@ class UserMenu {
       throw new Error('No se pudo publicar a ningún relay');
     }
     
-    console.log(`Published to ${successful.length}/${RELAYS.length} relays`);
+    if (DEBUG) console.log(`Published to ${successful.length}/${RELAYS.length} relays`);
     return signed;
   }
 

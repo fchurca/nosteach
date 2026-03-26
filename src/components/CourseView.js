@@ -1,6 +1,7 @@
 import ZapButton from './ZapButton.js';
 import { fetchProfile, getLud16, isWebLNAvailable, formatAuthorName } from '../lib/lightning.js';
 import InvoiceModal from './InvoiceModal.js';
+import { DEBUG } from '../lib/constants.js';
 
 class CourseView {
   constructor(container, course, nostr, roles, onBack) {
@@ -128,10 +129,10 @@ class CourseView {
     const zapContainer = document.getElementById('zap-button-container');
     if (!zapContainer) return;
 
-    console.log('[CourseView] initZapButton, teacherProfile:', this.teacherProfile);
+    if (DEBUG) console.log('[CourseView] initZapButton, teacherProfile:', this.teacherProfile);
     
     const teacherLud16 = this.teacherProfile?.lud16 || this.teacherProfile?.lnurl || null;
-    console.log('[CourseView] teacherLud16:', teacherLud16);
+    if (DEBUG) console.log('[CourseView] teacherLud16:', teacherLud16);
 
     const zapBtn = new ZapButton({
       recipientPubkey: this.course.pubkey,
@@ -140,7 +141,7 @@ class CourseView {
       amounts: [21, 69, 210, 690],
       customMax: 10000,
       onSuccess: (result, amount) => {
-        console.log('Zap exitoso:', result);
+        if (DEBUG) console.log('Zap exitoso:', result);
       },
       onError: (err, amount) => {
         console.error('Error en zap:', err);
@@ -165,7 +166,7 @@ class CourseView {
         const content = JSON.parse(events[0].content);
         this.teacherProfile = content;
         this.updateTeacherDisplay();
-        console.log('[CourseView] Teacher profile loaded:', this.teacherProfile?.lud16);
+        if (DEBUG) console.log('[CourseView] Teacher profile loaded:', this.teacherProfile?.lud16);
         this.initZapButton();
       }
     } catch (err) {

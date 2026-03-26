@@ -1,6 +1,7 @@
 import { ZAP_AMOUNTS, getLud16 } from '../lib/lightning.js';
 import { fetchProfile } from '../lib/lightning.js';
 import InvoiceModal from './InvoiceModal.js';
+import { DEBUG } from '../lib/constants.js';
 
 class ZapButton {
   constructor(options = {}) {
@@ -22,16 +23,16 @@ class ZapButton {
   }
   
   async mount(container) {
-    console.log('[ZapButton] Mount called, recipientPubkey:', this.recipientPubkey, 'recipientLud16:', this.recipientLud16);
+    if (DEBUG) console.log('[ZapButton] Mount called, recipientPubkey:', this.recipientPubkey, 'recipientLud16:', this.recipientLud16);
     this.container = container;
     this.lud16 = this.recipientLud16;
     if (!this.lud16) {
-      console.log('[ZapButton] No recipientLud16, fetching...');
+      if (DEBUG) console.log('[ZapButton] No recipientLud16, fetching...');
       this.lud16 = await getLud16(this.recipientPubkey);
     }
-    console.log('[ZapButton] Got lud16:', this.lud16);
+    if (DEBUG) console.log('[ZapButton] Got lud16:', this.lud16);
     this.render();
-    console.log('[ZapButton] Rendered');
+    if (DEBUG) console.log('[ZapButton] Rendered');
   }
   
   render() {
@@ -81,7 +82,7 @@ class ZapButton {
   }
   
   attachListeners() {
-    console.log('[ZapButton] attachListeners called');
+    if (DEBUG) console.log('[ZapButton] attachListeners called');
     const amountBtns = this.container.querySelectorAll('.zap-amount-btn:not(.zap-custom-btn)');
     const customBtn = this.container.querySelector('.zap-custom-btn');
     const customInput = this.container.querySelector('#zap-custom-input');
@@ -89,7 +90,7 @@ class ZapButton {
     
     amountBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        console.log('[ZapButton] Clicked button, amount:', btn.dataset.amount);
+        if (DEBUG) console.log('[ZapButton] Clicked button, amount:', btn.dataset.amount);
         const amount = parseInt(btn.dataset.amount);
         this.openInvoiceModal(amount);
       });
@@ -117,13 +118,13 @@ class ZapButton {
   }
 
   async openInvoiceModal(amount) {
-    console.log('[ZapButton] openInvoiceModal called, amount:', amount, 'lud16:', this.lud16);
+    if (DEBUG) console.log('[ZapButton] openInvoiceModal called, amount:', amount, 'lud16:', this.lud16);
     try {
       if (!this.lud16) {
-        console.log('[ZapButton] Fetching lud16 for:', this.recipientPubkey);
+        if (DEBUG) console.log('[ZapButton] Fetching lud16 for:', this.recipientPubkey);
         for (let i = 0; i < 3; i++) {
           this.lud16 = await getLud16(this.recipientPubkey);
-          console.log('[ZapButton] Attempt', i+1, 'lud16:', this.lud16);
+          if (DEBUG) console.log('[ZapButton] Attempt', i+1, 'lud16:', this.lud16);
           if (this.lud16) break;
           await new Promise(r => setTimeout(r, 1000));
         }
@@ -133,14 +134,14 @@ class ZapButton {
         return;
       }
 
-      console.log('[ZapButton] Creating InvoiceModal with lud16:', this.lud16, 'recipientPubkey:', this.recipientPubkey);
+      if (DEBUG) console.log('[ZapButton] Creating InvoiceModal with lud16:', this.lud16, 'recipientPubkey:', this.recipientPubkey);
       this.modal = new InvoiceModal({
         amount: amount,
         description: `Zap desde NosTeach`,
         lud16: this.lud16,
         recipientPubkey: this.recipientPubkey,
         onSuccess: (result) => {
-          console.log('[ZapButton] Zap exitoso via InvoiceModal:', result);
+          if (DEBUG) console.log('[ZapButton] Zap exitoso via InvoiceModal:', result);
           this.state = 'success';
           this.showStatus('success', `¡Pago de ${amount} sats recibido!`);
           this.onSuccess(result, amount);
@@ -152,7 +153,7 @@ class ZapButton {
         }
       });
       
-      console.log('[ZapButton] Calling modal.show()');
+      if (DEBUG) console.log('[ZapButton] Calling modal.show()');
       this.modal.show();
     } catch (err) {
       this.showError(err.message);
