@@ -79,9 +79,11 @@ El flag se mantiene en localStorage hasta que se desactive manualmente.
 ### Git Operations
 
 **El usuario gestiona**: Commits, pushes y operaciones de escritura.
-- Mostrar diff antes de commit
-- Pedir confirmación del mensaje de commit
-- Nunca hacer push sin autorización explícita
+  - NUNCA proponer o hacer commits uno mismo - siempre pedirle al usuario que lo haga
+  - EXCEPCIÓN: si el usuario pide un estado de git con intención de resumir tareas, podés proponer un mensaje de commit corto de una línea
+  - Mostrar diff antes de commit
+  - Pedir confirmación del mensaje de commit
+  - Nunca hacer push sin autorización explícita
 
 ---
 
