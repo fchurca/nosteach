@@ -230,7 +230,7 @@ class UserMenu {
     }
     // Button name
     if (nameBtnEl) {
-      nameBtnEl.textContent = displayName || 'Usuario';
+      nameBtnEl.textContent = displayName || '(cargando nombre...)';
     }
   }
 

@@ -63,16 +63,16 @@ Hay demasiadas sentencias de debug que ensucian la consola en producción.
 
 ## 🟡 Media Prioridad (UX/funcionalidad)
 
-### ⏳ 4. Breadcrumbs: Navegación sin indicador de ruta
+### ✅ 4. Breadcrumbs: Navegación sin indicador de ruta
 **Ubicación**: `src/components/CourseView.js`
 
 Cuando el usuario navega a un curso desde la lista, no hay manera de saber desde dónde vino o cómo volver facilmente.
 
-**Solución**: Agregar breadcrumbs en vistas profundas (curso, perfil de teacher, evaluación).
+**Solución**: Agregar breadcrumb a CourseView, TeacherProfile y EvaluationList con estilos CSS.
 
 ---
 
-### ⏳ 5. Timeout de sesión no manejado
+### ❌ 5. Timeout de sesión no manejado (REMOVIDO a pedido del usuario)
 **Ubicación**: `src/components/UserMenu.js`
 
 No hay expiración de sesión ni renovación de tokens. El usuario puede quedar "atrapado" en sesión indefinidamente.
@@ -81,9 +81,18 @@ No hay expiración de sesión ni renovación de tokens. El usuario puede quedar 
 
 ---
 
-### ⏳ 6. Sin feedback cuando relays no responden
+### ✅ 6. Sin feedback cuando relays no responden
 **Ubicación**: `src/lib/nostr.js`, `src/components/UserMenu.js`
 
 Cuando los relays están caídos o no responden, el usuario no tiene feedback de qué está pasando.
 
-**Solución**: Mostrar indicador de estado de conexión (online/offline/reconnecting).
+**Solución**: Agregado sistema de estado de conexión en nostr.js con callback. Agregado indicador visual en header de App.js.
+
+---
+
+### 🆕 7. URLs profundas (accesibles desde bookmarks)
+**Ubicación**: `src/App.js`
+
+El usuario no puede acceder directamente a cursos o docentes via URL (ej: `#/c/{eventId}`).
+
+**Solución**: Agregar rutas hash para cursos similares a las existentes para perfiles (`#/p/{npub}`).

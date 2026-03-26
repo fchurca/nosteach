@@ -27,6 +27,16 @@ class EvaluationList {
 
     this.container.innerHTML = `
       <div class="card">
+        <nav class="breadcrumb" style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted);">
+          <a href="#" onclick="window.app?.navigate('home'); return false;" style="color: var(--accent);">Inicio</a>
+          <span style="margin: 0 8px;">›</span>
+          <a href="#" onclick="window.app?.navigate('courses'); return false;" style="color: var(--accent);">Explorar</a>
+          <span style="margin: 0 8px;">›</span>
+          <a href="#" onclick="window.app?.navigateToCourse('${this.courseId}'); return false;" style="color: var(--accent);">${courseTitle}</a>
+          <span style="margin: 0 8px;">›</span>
+          <span>Evaluaciones</span>
+        </nav>
+
         <button onclick="window.app?.navigateToCourse('${this.courseId}')" class="btn-secondary" style="margin-bottom: 15px;">
           ← Volver al curso
         </button>

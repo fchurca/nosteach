@@ -7,6 +7,7 @@ import { validateCurso } from './lib/schema.js';
 import { formatAuthorName } from './lib/lightning.js';
 import { nip19 } from 'nostr-tools';
 import { DEBUG } from './lib/constants.js';
+import { onConnectionStatusChange, getConnectionStatus } from './lib/nostr.js';
 
 class App {
   constructor() {
@@ -37,6 +38,32 @@ class App {
     this.checkStoredSession();
     this.render();
     this.initHashRouting();
+    this.initConnectionStatus();
+  }
+
+  initConnectionStatus() {
+    const statusEl = document.getElementById('connection-status');
+    if (!statusEl) return;
+    
+    const updateUI = (status) => {
+      const dot = statusEl.querySelector('.status-dot');
+      const text = statusEl.querySelector('.status-text');
+      if (!dot || !text) return;
+      
+      statusEl.style.display = 'flex';
+      if (status === 'connected' || status === 'idle') {
+        statusEl.style.display = 'none';
+      } else if (status === 'disconnected') {
+        dot.style.background = '#ff4444';
+        text.textContent = 'Sin conexión';
+      } else if (status === 'error') {
+        dot.style.background = '#ffaa00';
+        text.textContent = 'Reconectando...';
+      }
+    };
+    
+    updateUI(getConnectionStatus());
+    this.connectionStatusUnsubscribe = onConnectionStatusChange(updateUI);
   }
 
   initHashRouting() {
@@ -139,6 +166,9 @@ class App {
           <div>
             <h1 style="margin: 0;"><a href="#" onclick="window.app?.navigate('home'); return false;" style="color: inherit; text-decoration: none;">⚡ <span>NosTeach</span></a></h1>
             <p class="subtitle" style="margin: 5px 0 0;">Plataforma educativa descentralizada</p>
+            <div id="connection-status" class="connection-status" style="font-size: 0.75rem; margin-top: 4px; display: none;">
+              <span class="status-dot"></span> <span class="status-text">Conectando...</span>
+            </div>
           </div>
           <nav style="display: flex; gap: 10px; align-items: center;">
             <button class="btn-secondary" onclick="window.app?.navigate('home')">🏠 Inicio</button>
