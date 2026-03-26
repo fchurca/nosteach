@@ -40,6 +40,32 @@ Los datos de testing están en `.secrets` (NO COMMITEAR):
 - O setear `TEST_NSEC` como variable de entorno
 - **nombre**: debbie
 
+### Secretos y Credenciales
+
+**REGLA CRÍTICA**: NUNCA poner secrets en código o documentación commiteable.
+
+1. **Origen de secrets**: Siempre leer desde `.secrets` o variables de entorno
+2. **No hardcodear**: Ni en código, ni en tests, ni en documentación
+3. **Archivos .secrets**: Siempre en `.gitignore` (ya configurado)
+4. **Pattern a usar**:
+   ```javascript
+   import { readFileSync, existsSync } from 'fs';
+   
+   let MY_SECRET = process.env.MY_SECRET;
+   if (!MY_SECRET && existsSync('.secrets')) {
+     const secrets = readFileSync('.secrets', 'utf-8');
+     const match = secrets.match(/MY_SECRET=(.+)/);
+     if (match) MY_SECRET = match[1];
+   }
+   ```
+
+### Git Operations
+
+**El usuario gestiona**: Commits, pushes y operaciones de escritura.
+- Mostrar diff antes de commit
+- Pedir confirmación del mensaje de commit
+- Nunca hacer push sin autorización explícita
+
 ---
 
 ## Reglas de Trabajo
