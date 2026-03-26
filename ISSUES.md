@@ -2,7 +2,7 @@
 
 ## 🔴 Alta Prioridad (Bug fixes)
 
-### 1. Código duplicado: loadRoles()
+### ✅ 1. Código duplicado: loadRoles()
 **Ubicación**: `src/App.js:71-82` y `src/App.js:112-122`
 
 La función `loadRoles()` está definida dos veces en la clase App, lo cual es un bug que puede causar comportamiento inesperado.
@@ -40,7 +40,7 @@ loadRoles() {
 
 ---
 
-### 2. Inconsistencia en storage keys
+### ✅ 2. Inconsistencia en storage keys
 **Ubicación**: `src/App.js`, `src/components/CourseView.js`, `src/components/RoleSelector.js`
 
 Se usa `nosteach_roles` en algunos lugares y la constante `ROLES_KEY` (que vale `'nosteach_roles'`) en otros.
@@ -49,7 +49,7 @@ Se usa `nosteach_roles` en algunos lugares y la constante `ROLES_KEY` (que vale 
 
 ---
 
-### 3. Exceso de console.log
+### ⏳ 3. Exceso de console.log
 **Ubicación**: Múltiples archivos (200+ statements)
 
 Hay demasiadas sentencias de debug que ensucian la consola en producción.
@@ -62,7 +62,7 @@ Hay demasiadas sentencias de debug que ensucian la consola en producción.
 
 ## 🟡 Media Prioridad (UX/funcionalidad)
 
-### 4. Breadcrumbs: Navegación sin indicador de ruta
+### ⏳ 4. Breadcrumbs: Navegación sin indicador de ruta
 **Ubicación**: `src/components/CourseView.js`
 
 Cuando el usuario navega a un curso desde la lista, no hay manera de saber desde dónde vino o cómo volver facilmente.
@@ -71,7 +71,7 @@ Cuando el usuario navega a un curso desde la lista, no hay manera de saber desde
 
 ---
 
-### 5. Timeout de sesión no manejado
+### ⏳ 5. Timeout de sesión no manejado
 **Ubicación**: `src/components/UserMenu.js`
 
 No hay expiración de sesión ni renovación de tokens. El usuario puede quedar "atrapado" en sesión indefinidamente.
@@ -80,7 +80,7 @@ No hay expiración de sesión ni renovación de tokens. El usuario puede quedar 
 
 ---
 
-### 6. Sin feedback cuando relays no responden
+### ⏳ 6. Sin feedback cuando relays no responden
 **Ubicación**: `src/lib/nostr.js`, `src/components/UserMenu.js`
 
 Cuando los relays están caídos o no responden, el usuario no tiene feedback de qué está pasando.

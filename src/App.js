@@ -70,7 +70,7 @@ class App {
 
   loadRoles() {
     try {
-      const saved = localStorage.getItem('nosteach_roles');
+      const saved = localStorage.getItem(ROLES_KEY);
       if (saved) {
         this.roles = JSON.parse(saved);
       }
@@ -107,18 +107,6 @@ class App {
     this.updateNav();
     await this.initNostrReadOnly();
     console.log('Sesión cerrada. reconectado en modo lectura');
-  }
-
-  loadRoles() {
-    try {
-      const saved = localStorage.getItem(ROLES_KEY);
-      if (saved) {
-        this.roles = JSON.parse(saved);
-      }
-    } catch (err) {
-      console.warn('Error loading roles:', err);
-    }
-    this.updateNav();
   }
 
   onRolesChange(roles) {
