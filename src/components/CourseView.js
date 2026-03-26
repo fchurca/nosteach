@@ -223,12 +223,12 @@ class CourseView {
     const lud16 = getLud16(this.teacherProfile);
 
     if (!lud16) {
-      alert('El profesor no tiene Lightning configurado. No podés pagar para enviar tu evaluación.');
+      window.toast?.warning('El profesor no tiene Lightning configurado. No podés pagar para enviar tu evaluación.');
       return;
     }
 
     if (!isWebLNAvailable()) {
-      alert('Necesitás instalar Alby u otra wallet WebLN para pagar.');
+      window.toast?.warning('Necesitás instalar Alby u otra wallet WebLN para pagar.');
       return;
     }
 
@@ -320,7 +320,7 @@ class CourseView {
       if (selected) {
         respuestas.push(parseInt(selected.value));
       } else {
-        alert(`Por favor respondé la pregunta ${i + 1}`);
+        window.toast?.warning(`Por favor respondé la pregunta ${i + 1}`);
         return;
       }
     }
@@ -350,7 +350,7 @@ class CourseView {
         `;
       }
     } catch (err) {
-      alert('Error al enviar evaluación: ' + err.message);
+      window.toast?.error('Error al enviar evaluación: ' + err.message);
     }
   }
 

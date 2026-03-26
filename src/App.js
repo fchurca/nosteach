@@ -394,7 +394,9 @@ class App {
         <h2>📚 Explorar Cursos</h2>
         <p>Todos los cursos publicados en Nostr.</p>
         <div id="courses-container">
-          <p>Cargando cursos...</p>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
         </div>
       </div>
     `;
@@ -515,7 +517,7 @@ class App {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
 
-    contentArea.innerHTML = '<div class="card"><p>Cargando curso...</p></div>';
+    contentArea.innerHTML = '<div class="card"><div class="skeleton skeleton-box"></div><div class="skeleton skeleton-text"></div></div>';
 
     try {
       const events = await this.nostr.query({
@@ -572,10 +574,10 @@ class App {
 
   enrollCourse(eventId) {
     if (!this.roles.student) {
-      alert('Solo los alumnos pueden inscribirse');
+      window.toast?.warning('Solo los alumnos pueden inscribirse');
       return;
     }
-    alert('Inscribirse al curso: ' + eventId + ' (próximamente)');
+    window.toast?.info('Inscribirse al curso: ' + eventId + ' (próximamente)');
   }
 
   async showMyCourses() {
@@ -671,7 +673,7 @@ class App {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
 
-    contentArea.innerHTML = '<div class="card"><p>Cargando curso...</p></div>';
+    contentArea.innerHTML = '<div class="card"><div class="skeleton skeleton-box"></div><div class="skeleton skeleton-text"></div></div>';
 
     try {
       const events = await this.nostr.query({
@@ -861,12 +863,12 @@ class App {
 
   async handleSubmitCourse() {
     if (!this.nostr) {
-      alert('Primero conectá tu identidad Nostr');
+      window.toast?.warning('Primero conectá tu identidad Nostr');
       return;
     }
 
     if (!this.roles.teacher) {
-      alert('Solo los profesores pueden crear cursos');
+      window.toast?.warning('Solo los profesores pueden crear cursos');
       return;
     }
 
@@ -908,7 +910,7 @@ class App {
 
     const validation = validateCurso(curso);
     if (!validation.valid) {
-      alert('Errores en el formulario:\n• ' + validation.errors.join('\n• '));
+      window.toast?.error('Errores en el formulario:\n• ' + validation.errors.join('\n• '));
       return;
     }
 
@@ -921,10 +923,10 @@ class App {
 
     try {
       const event = await this.nostr.publish(30078, curso, tags);
-      alert(`¡Curso publicado! ID: ${event.id.slice(0, 16)}...`);
+      window.toast?.success(`¡Curso publicado! ID: ${event.id.slice(0, 16)}...`);
       this.navigate('courses');
     } catch (err) {
-      alert('Error al publicar: ' + err.message);
+      window.toast?.error('Error al publicar: ' + err.message);
     }
   }
 }

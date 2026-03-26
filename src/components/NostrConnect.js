@@ -46,7 +46,8 @@ class NostrConnect {
         </div>
 
         <div id="nostr-login-form">
-          <input type="password" id="nsec-input" placeholder="Tu nsec (nsec1...)">
+          <label for="nsec-input" style="display: block; margin-bottom: 4px; font-size: 0.9rem;">Tu clave privada (nsec)</label>
+          <input type="password" id="nsec-input" placeholder="nsec1...">
           <button id="nsec-connect-btn">Conectar con nsec</button>
         </div>
         

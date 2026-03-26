@@ -66,6 +66,7 @@ class UserProfile {
             <input type="radio" name="zapper" value="nwc">
             <span>NWC (directo desde app)</span>
           </label>
+          <label for="nwc-url" style="display: block; margin-bottom: 4px; font-size: 0.9rem;">URL de conexión NWC</label>
           <input type="text" id="nwc-url" placeholder="nostr+walletconnect://..." style="display: none;">
         </div>
 
@@ -99,7 +100,7 @@ class UserProfile {
 
   async saveProfile() {
     if (!this.nostr?.pubkey) {
-      alert('Primero conectá tu identidad Nostr');
+      window.toast?.warning('Primero conectá tu identidad Nostr');
       return;
     }
 
@@ -120,9 +121,9 @@ class UserProfile {
 
     try {
       await this.nostr.publish(0, event.content, []);
-      alert('✅ Perfil guardado en Nostr');
+      window.toast?.success('✅ Perfil guardado en Nostr');
     } catch (err) {
-      alert('❌ Error al guardar: ' + err.message);
+      window.toast?.error('❌ Error al guardar: ' + err.message);
     }
   }
 }

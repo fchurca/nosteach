@@ -169,12 +169,12 @@ class EvaluationList {
     const studentName = profile?.display_name || profile?.name || studentPubkey.slice(0, 8);
 
     if (!lud16) {
-      alert(`${studentName} no tiene Lightning configurado. No podés enviarle un premio.`);
+      window.toast?.warning(`${studentName} no tiene Lightning configurado. No podés enviarle un premio.`);
       return;
     }
 
     if (!isWebLNAvailable()) {
-      alert('Necesitás instalar Alby u otra wallet WebLN para enviar premios.');
+      window.toast?.warning('Necesitás instalar Alby u otra wallet WebLN para enviar premios.');
       return;
     }
 
@@ -186,7 +186,7 @@ class EvaluationList {
       lud16: lud16,
       recipientPubkey: this.course.pubkey,
       onSuccess: (result) => {
-        alert(`¡Premio de 21 sats enviado a ${studentName}!`);
+        window.toast?.success(`¡Premio de 21 sats enviado a ${studentName}!`);
       },
       onError: (err) => {
         console.error('Error enviando premio:', err);

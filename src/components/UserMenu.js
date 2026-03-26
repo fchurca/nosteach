@@ -70,7 +70,9 @@ class UserMenu {
               <strong>Conectar con tu clave Nostr</strong>
               <button id="login-close-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;">×</button>
             </div>
-            <input type="password" id="nsec-input-header" placeholder="Tu nsec (nsec1...)" style="width: 100%; margin-bottom: 8px;">
+            <label for="nsec-input-header" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: var(--text-secondary);">Tu clave privada (nsec)</label>
+            <input type="password" id="nsec-input-header" placeholder="nsec1..." style="width: 100%; margin-bottom: 8px;" aria-describedby="nsec-help">
+            <small id="nsec-help" style="display: block; margin-bottom: 8px; font-size: 0.8rem; color: var(--text-muted);">Nunca se comparte - se usa solo para iniciar sesión localmente</small>
             <div id="login-error" style="color: var(--error); font-size: 0.85rem; margin-bottom: 8px; display: none;"></div>
             <button id="nsec-connect-header-btn" style="width: 100%;">Conectar</button>
           </div>
