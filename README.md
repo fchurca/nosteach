@@ -17,6 +17,10 @@ Participando en **FOUNDATIONS** - La Crypta Lightning Hackathons 2026.
 - **Premio**: 1,000,000 sats
 - **Info**: https://hackaton.lacrypta.ar
 
+## Demo
+
+Probá la versión live: https://nosteach.vercel.app/
+
 ## Inicio Rápido
 
 ```bash
