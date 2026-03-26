@@ -1,10 +1,12 @@
-import { ZAP_AMOUNTS, isWebLNAvailable, zapUser, getLud16 } from '../lib/lightning.js';
+import { ZAP_AMOUNTS, getLud16 } from '../lib/lightning.js';
 import { fetchProfile } from '../lib/lightning.js';
+import InvoiceModal from './InvoiceModal.js';
 
 class ZapButton {
   constructor(options = {}) {
     this.recipientPubkey = options.recipientPubkey;
     this.recipientName = options.recipientName || 'Usuario';
+    this.recipientLud16 = options.recipientLud16 || null;
     this.amounts = options.amounts || ZAP_AMOUNTS;
     this.customMax = options.customMax || 10000;
     this.onSuccess = options.onSuccess || (() => {});
@@ -16,36 +18,34 @@ class ZapButton {
     this.modal = null;
     this.invoice = null;
     this.amount = null;
+    this.lud16 = null;
   }
   
-  mount(container) {
+  async mount(container) {
+    console.log('[ZapButton] Mount called, recipientPubkey:', this.recipientPubkey, 'recipientLud16:', this.recipientLud16);
     this.container = container;
+    this.lud16 = this.recipientLud16;
+    if (!this.lud16) {
+      console.log('[ZapButton] No recipientLud16, fetching...');
+      this.lud16 = await getLud16(this.recipientPubkey);
+    }
+    console.log('[ZapButton] Got lud16:', this.lud16);
     this.render();
+    console.log('[ZapButton] Rendered');
   }
   
   render() {
     if (!this.container) return;
     
-    const weblnAvailable = isWebLNAvailable();
     const buttonText = this.state === 'loading' ? 'Preparando...' : `Apoyar con sats`;
     
     this.container.innerHTML = `
       <div class="zap-button-container">
-        ${!weblnAvailable ? `
-          <div class="zap-warning">
-            <span>Necesitás <a href="https://getalby.com" target="_blank">Alby</a> para enviar zaps</span>
-          </div>
-          <a href="https://getalby.com" target="_blank" class="btn-secondary" style="display: block; text-align: center; text-decoration: none; width: 100%;">
-            Instalar Alby
-          </a>
-        ` : ''}
-        
         <div class="zap-amounts">
           ${this.amounts.map(amount => `
             <button 
               class="zap-amount-btn" 
               data-amount="${amount}"
-              ${!weblnAvailable ? 'disabled' : ''}
             >
               ${amount} sats
             </button>
@@ -54,7 +54,6 @@ class ZapButton {
             <button 
               class="zap-amount-btn zap-custom-btn"
               data-amount="custom"
-              ${!weblnAvailable ? 'disabled' : ''}
             >
               Custom
             </button>
@@ -82,6 +81,7 @@ class ZapButton {
   }
   
   attachListeners() {
+    console.log('[ZapButton] attachListeners called');
     const amountBtns = this.container.querySelectorAll('.zap-amount-btn:not(.zap-custom-btn)');
     const customBtn = this.container.querySelector('.zap-custom-btn');
     const customInput = this.container.querySelector('#zap-custom-input');
@@ -89,8 +89,9 @@ class ZapButton {
     
     amountBtns.forEach(btn => {
       btn.addEventListener('click', () => {
+        console.log('[ZapButton] Clicked button, amount:', btn.dataset.amount);
         const amount = parseInt(btn.dataset.amount);
-        this.startZap(amount);
+        this.openInvoiceModal(amount);
       });
     });
     
@@ -102,40 +103,59 @@ class ZapButton {
     }
     
     if (customConfirm) {
-      customConfirm.addEventListener('click', () => {
+      customConfirm.addEventListener('click', async () => {
         const input = this.container.querySelector('#zap-custom-amount');
         const amount = parseInt(input.value);
         if (amount > 0 && amount <= this.customMax) {
           customInput.style.display = 'none';
-          this.startZap(amount);
+          await this.openInvoiceModal(amount);
         } else {
           this.showError(`Monto inválido (1-${this.customMax} sats)`);
         }
       });
     }
   }
-  
-  async startZap(amount) {
-    this.amount = amount;
-    this.state = 'loading';
-    this.showStatus('loading', `Preparando zap de ${amount} sats...`);
-    this.onStart(amount);
-    
+
+  async openInvoiceModal(amount) {
+    console.log('[ZapButton] openInvoiceModal called, amount:', amount, 'lud16:', this.lud16);
     try {
-      const result = await zapUser(this.recipientPubkey, amount, `Zap desde NosTeach`);
+      if (!this.lud16) {
+        console.log('[ZapButton] Fetching lud16 for:', this.recipientPubkey);
+        for (let i = 0; i < 3; i++) {
+          this.lud16 = await getLud16(this.recipientPubkey);
+          console.log('[ZapButton] Attempt', i+1, 'lud16:', this.lud16);
+          if (this.lud16) break;
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      if (!this.lud16) {
+        this.showError('El usuario no tiene Lightning address');
+        return;
+      }
+
+      console.log('[ZapButton] Creating InvoiceModal with lud16:', this.lud16, 'recipientPubkey:', this.recipientPubkey);
+      this.modal = new InvoiceModal({
+        amount: amount,
+        description: `Zap desde NosTeach`,
+        lud16: this.lud16,
+        recipientPubkey: this.recipientPubkey,
+        onSuccess: (result) => {
+          console.log('[ZapButton] Zap exitoso via InvoiceModal:', result);
+          this.state = 'success';
+          this.showStatus('success', `¡Pago de ${amount} sats recibido!`);
+          this.onSuccess(result, amount);
+        },
+        onError: (err) => {
+          console.error('[ZapButton] Error en InvoiceModal:', err);
+          this.showError(err.message);
+          this.onError(err, amount);
+        }
+      });
       
-      this.state = 'success';
-      this.showStatus('success', `¡Zap de ${amount} sats enviado!`);
-      this.onSuccess(result, amount);
-      
-      setTimeout(() => {
-        this.reset();
-      }, 3000);
-      
+      console.log('[ZapButton] Calling modal.show()');
+      this.modal.show();
     } catch (err) {
-      this.state = 'error';
       this.showError(err.message);
-      this.onError(err, amount);
     }
   }
   

@@ -1,10 +1,10 @@
 import { chromium } from 'playwright';
 import { readFileSync, existsSync } from 'fs';
 
-const URL = 'http://localhost:5174';
+const URL = process.env.TEST_URL || 'http://localhost:5174';
 
 let NSEC_TEST = process.env.TEST_NSEC;
-let NWC_SECRET = process.env.NWC_SECRET;
+let NWC_URL = process.env.NWC_URL;
 let TEST_LUD16 = process.env.TEST_LUD16;
 let TEST_PUBKEY = process.env.TEST_PUBKEY;
 
@@ -13,8 +13,11 @@ if (!NSEC_TEST && existsSync('.secrets')) {
   const nsecMatch = secrets.match(/TEST_NSEC=(.+)/);
   if (nsecMatch) NSEC_TEST = nsecMatch[1];
   
-  const nwcMatch = secrets.match(/secret=([^&]+)/);
-  if (nwcMatch) NWC_SECRET = nwcMatch[1];
+  const nwcMatch = secrets.match(/nostr\+walletconnect:\/\/[^\s]+/);
+  if (nwcMatch) {
+    NWC_URL = nwcMatch[0];
+    console.log('   NWC_URL loaded:', NWC_URL.slice(0, 50) + '...');
+  }
   
   const lud16Match = secrets.match(/TEST_LUD16=(.+)/);
   if (lud16Match) TEST_LUD16 = lud16Match[1];
@@ -28,84 +31,64 @@ if (!TEST_LUD16 || !TEST_PUBKEY) {
   process.exit(1);
 }
 
+if (!NWC_URL) {
+  console.error('ERROR: NWC_URL (nostr+walletconnect://...) must be defined in .secrets');
+  process.exit(1);
+}
+
+console.log('   NWC_URL:', NWC_URL ? NWC_URL.slice(0, 60) + '...' : 'undefined');
+
 async function payInvoiceWithNWC(invoice) {
-  console.log('   Pagando invoice via NWC...');
-  console.log('   NWC_SECRET:', NWC_SECRET ? NWC_SECRET.slice(0, 20) + '...' : 'undefined');
+  console.log('   Pagando invoice via NWC CLI...');
+  console.log('   Invoice:', invoice.slice(0, 40) + '...');
   
-  if (!NWC_SECRET) {
-    console.log('   Sin NWC_SECRET, usando metodo alternativo...');
-    return null;
-  }
+  const { execFile } = await import('child_process');
   
-  // Try different Alby endpoints
-  const endpoints = [
-    'https://api.getalby.com/invoices/pay',
-    'https://api.getalby.com/payments',
-    'https://api.getalby.com/pay/invoice'
-  ];
-  
-  for (const endpoint of endpoints) {
-    try {
-      console.log(`   Probando endpoint: ${endpoint}`);
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `NWC ${NWC_SECRET}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ invoice })
-      });
-      
-      console.log('   Response status:', response.status);
-      
-      if (response.status === 200 || response.status === 201) {
-        const text = await response.text();
-        console.log('   Response:', text.slice(0, 200));
-        return JSON.parse(text);
+  return new Promise((resolve) => {
+    const nwcString = NWC_URL || '';
+    const env = { ...process.env, NWC_CONNECTION: nwcString };
+    
+    execFile(
+      process.env.HOME + '/.bun/bin/bun',
+      ['run', process.env.HOME + '/.nwc-monitor/nwc-cli.mjs', 'pay', invoice],
+      { env },
+      (error, stdout, stderr) => {
+        if (error) {
+          console.log('   Error:', error.message);
+          resolve(null);
+          return;
+        }
+        console.log('   Result:', stdout.trim());
+        resolve({ success: true, output: stdout });
       }
-    } catch (err) {
-      console.log('   Error:', err.message);
-    }
-  }
-  
-  return null;
+    );
+  });
 }
 
 async function createAndPayInvoiceLud16() {
-  console.log('   Creando invoice via LNURLp y pagando...');
+  console.log('   Pagando 1 sat a', TEST_LUD16, 'via NWC CLI...');
   
-  // First, get the LNURL for the lud16
-  const lud16 = TEST_LUD16;
-  const [username, domain] = lud16.split('@');
+  const { execFile } = await import('child_process');
   
-  try {
-    // Get LNURLp info
-    const lnurlResponse = await fetch(`https://${domain}/.well-known/lnurlp/${username}`);
-    const lnurlData = await lnurlResponse.json();
-    console.log('   LNURLp data:', JSON.stringify(lnurlData).slice(0, 100));
+  return new Promise((resolve) => {
+    const nwcString = NWC_URL || '';
+    const env = { ...process.env, NWC_CONNECTION: nwcString };
     
-    if (!lnurlData.callback) {
-      console.log('   No callback found');
-      return null;
-    }
-    
-    // Create invoice for 21 sats (21000 millisats)
-    const callbackUrl = new globalThis.URL(lnurlData.callback);
-    callbackUrl.searchParams.set('amount', '21000'); // 21 sats in millisats
-    
-    const invoiceResponse = await fetch(callbackUrl.toString());
-    const invoiceData = await invoiceResponse.json();
-    console.log('   Invoice created:', invoiceData.pr?.slice(0, 50) + '...');
-    
-    if (invoiceData.pr) {
-      // Now pay with NWC
-      return await payInvoiceWithNWC(invoiceData.pr);
-    }
-  } catch (err) {
-    console.log('   Error:', err.message);
-  }
-  
-  return null;
+    execFile(
+      process.env.HOME + '/.bun/bin/bun',
+      ['run', process.env.HOME + '/.nwc-monitor/nwc-cli.mjs', 'pay-address', '1', TEST_LUD16],
+      { env },
+      (error, stdout, stderr) => {
+        if (error) {
+          console.log('   Error:', error.message);
+          resolve(null);
+          return;
+        }
+        console.log('   Result:', stdout.trim());
+        resolve({ success: true, output: stdout });
+      }
+    );
+  });
 }
 
 async function runTest() {
@@ -118,7 +101,12 @@ async function runTest() {
   const logs = [];
   page.on('console', msg => {
     const text = msg.text();
+    console.log('  [BROWSER]', text);
     logs.push(text);
+  });
+  
+  page.on('pageerror', err => {
+    console.log('  [PAGE ERROR]', err.message);
   });
 
   try {
@@ -141,40 +129,47 @@ async function runTest() {
     
     // Directly create an InvoiceModal
     await page.evaluate(({ lud16, pubkey }) => {
-      window.invoiceModal = new window.InvoiceModal({
-        amount: 1,
-        description: 'Test payment 1 sat',
-        lud16: lud16,
-        recipientPubkey: pubkey,
-        onSuccess: (result) => console.log('SUCCESS:', result),
-        onError: (err) => console.log('ERROR:', err.message)
-      });
-      window.invoiceModal.show();
+      console.log('[TEST] Creating InvoiceModal with lud16:', lud16);
+      try {
+        window.invoiceModal = new window.InvoiceModal({
+          amount: 1,
+          description: 'Test payment 1 sat',
+          lud16: lud16,
+          recipientPubkey: pubkey,
+          onSuccess: (result) => console.log('SUCCESS:', result),
+          onError: (err) => console.log('ERROR:', err.message)
+        });
+        console.log('[TEST] InvoiceModal created, calling show()...');
+        window.invoiceModal.show().then(() => {
+          console.log('[TEST] show() completed, invoice:', window.invoiceModal?.invoice?.slice(0, 30));
+          console.log('[TEST] paymentHash:', window.invoiceModal?.paymentHash);
+        }).catch(e => console.log('[TEST] show() error:', e.message));
+      } catch (e) {
+        console.log('[TEST] Error creating modal:', e.message);
+      }
     }, { lud16: TEST_LUD16, pubkey: TEST_PUBKEY });
     
-    await page.waitForTimeout(8000);
+    // Wait for invoice to be generated and tracker to start
+    await page.waitForTimeout(5000);
+    
+    // Now get the invoice and pay it
+    const invoiceInfo = await page.evaluate(() => {
+      const inv = window.invoiceModal?.invoice;
+      const hash = window.invoiceModal?.paymentHash;
+      return { invoice: inv, paymentHash: hash };
+    });
+    
+    console.log('   Invoice para pagar:', invoiceInfo.invoice?.slice(0, 40) + '...');
+    console.log('   Payment Hash:', invoiceInfo.paymentHash?.slice(0, 20) + '...');
 
     const modal = await page.locator('#invoice-modal-overlay');
     const modalVisible = await modal.isVisible().catch(() => false);
 
-    if (modalVisible) {
+    if (modalVisible && invoiceInfo.invoice) {
       console.log('   ✓ Modal abierto');
-      
-      // Check what's in the modal
-      const modalContent = await page.locator('#invoice-content').innerHTML();
-      console.log('   Contenido:', modalContent.slice(0, 300));
-      
-      const invoice = await page.locator('#invoice-string').inputValue().catch(() => '');
-      console.log(`   Invoice: ${invoice.substring(0, 60)}...`);
-      
-      // Get the payment hash from the modal
-      const paymentHash = await page.evaluate(() => {
-        return window.invoiceModal?.paymentHash || null;
-      });
-      console.log(`   Payment Hash: ${paymentHash || 'extrayendo...'}`);
 
-      console.log('4. Pagando invoice via LNURLp + NWC...');
-      const payResult = await createAndPayInvoiceLud16();
+      console.log('4. Pagando el invoice via NWC CLI...');
+      const payResult = await payInvoiceWithNWC(invoiceInfo.invoice);
       
       if (payResult && (payResult.payment_hash || payResult.preimage || payResult.ok)) {
         console.log('   ✓ Pago enviado');
@@ -183,7 +178,7 @@ async function runTest() {
       }
 
       console.log('5. Esperando monitoreo (20s)...');
-      await page.waitForTimeout(20000);
+      await page.waitForTimeout(25000);
 
       console.log('\n📋 Logs de InvoiceTracker:');
       const relevantLogs = logs.filter(l => 
@@ -195,11 +190,19 @@ async function runTest() {
       );
       relevantLogs.forEach(l => console.log(`  - ${l}`));
 
-      // Check final status
-      const finalStatus = await page.evaluate(() => {
-        return window.invoiceModal?.state || 'unknown';
+      // Check final status and UI
+      const finalInfo = await page.evaluate(() => {
+        const modal = window.invoiceModal;
+        const content = document.getElementById('invoice-content')?.innerHTML || '';
+        return {
+          state: modal?.state || 'no-modal',
+          hasSuccess: content.includes('Pago exitoso') || content.includes('paid'),
+          content: content.slice(0, 200)
+        };
       });
-      console.log(`\n   Estado final del modal: ${finalStatus}`);
+      console.log(`\n   Estado final del modal: ${finalInfo.state}`);
+      console.log(`   UI actualizada: ${finalInfo.hasSuccess}`);
+      console.log(`   Contenido: ${finalInfo.content}`);
 
       await page.locator('#invoice-close-btn').click();
       await page.waitForTimeout(500);

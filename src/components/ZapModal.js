@@ -135,6 +135,7 @@ class ZapModal {
       const result = await generateInvoice(this.recipientLud16, amount, `Zap desde NosTeach`);
       this.invoice = result.invoice;
       this.paymentHash = result.paymentHash;
+      this.verifyUrl = result.verifyUrl;
       this.qrDataUrl = await generateQRCode(this.invoice);
       this.renderInvoice();
       this.startPolling();
@@ -248,7 +249,8 @@ class ZapModal {
       }
     }, { 
       paymentHash: this.paymentHash,
-      recipientPubkey: this.recipientPubkey
+      recipientPubkey: this.recipientPubkey,
+      verifyUrl: this.verifyUrl
     });
 
     this.tracker.start(5000, 600000);

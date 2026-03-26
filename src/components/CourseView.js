@@ -100,7 +100,7 @@ class CourseView {
           </div>
         ` : ''}
 
-        ${this.roles.sponsor ? `
+        ${this.roles.sponsor || true ? `
           <div style="margin-top: 20px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
             <h3>💰 Patrocinar al Profesor</h3>
             <p>Apoyá al docente con un zap.</p>
@@ -122,18 +122,21 @@ class CourseView {
     `;
 
     this.attachListeners();
-    this.initZapButton();
   }
 
   async initZapButton() {
-    if (!this.roles.sponsor) return;
-    
     const zapContainer = document.getElementById('zap-button-container');
     if (!zapContainer) return;
+
+    console.log('[CourseView] initZapButton, teacherProfile:', this.teacherProfile);
+    
+    const teacherLud16 = this.teacherProfile?.lud16 || this.teacherProfile?.lnurl || null;
+    console.log('[CourseView] teacherLud16:', teacherLud16);
 
     const zapBtn = new ZapButton({
       recipientPubkey: this.course.pubkey,
       recipientName: this.teacherProfile?.display_name || this.teacherProfile?.name || 'Profesor',
+      recipientLud16: teacherLud16,
       amounts: [21, 69, 210, 690],
       customMax: 10000,
       onSuccess: (result, amount) => {
@@ -144,7 +147,7 @@ class CourseView {
       }
     });
 
-    zapBtn.mount(zapContainer);
+    await zapBtn.mount(zapContainer);
     this.zapButton = zapBtn;
   }
 
@@ -162,6 +165,8 @@ class CourseView {
         const content = JSON.parse(events[0].content);
         this.teacherProfile = content;
         this.updateTeacherDisplay();
+        console.log('[CourseView] Teacher profile loaded:', this.teacherProfile?.lud16);
+        this.initZapButton();
       }
     } catch (err) {
       console.warn('Could not fetch teacher profile:', err.message);

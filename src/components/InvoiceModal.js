@@ -23,8 +23,10 @@ class InvoiceModal {
   }
   
   async show() {
+    console.log('[InvoiceModal] show() called');
     this.createOverlay();
     await this.generateInvoiceAndShow();
+    console.log('[InvoiceModal] show() completed');
   }
   
   createOverlay() {
@@ -62,14 +64,18 @@ class InvoiceModal {
   }
   
   async generateInvoiceAndShow() {
+    console.log('[InvoiceModal] generateInvoiceAndShow called, lud16:', this.lud16, 'amount:', this.amount);
     try {
-      const { invoice, paymentHash } = await generateInvoice(this.lud16, this.amount, this.description);
-      this.invoice = invoice;
-      this.paymentHash = paymentHash;
-      this.qrDataUrl = await generateQRCode(invoice);
+      const result = await generateInvoice(this.lud16, this.amount, this.description);
+      this.invoice = result.invoice;
+      this.paymentHash = result.paymentHash;
+      this.verifyUrl = result.verifyUrl;
+      this.qrDataUrl = await generateQRCode(this.invoice);
       await this.showInvoiceForm();
+      console.log('[InvoiceModal] About to call startCountdown and startPolling');
       this.startCountdown();
       this.startPolling();
+      console.log('[InvoiceModal] startCountdown and startPolling called');
     } catch (err) {
       this.showError(err.message);
       this.onError(err);
@@ -77,6 +83,7 @@ class InvoiceModal {
   }
 
   startPolling() {
+    console.log('[InvoiceModal] startPolling called, invoice:', this.invoice?.slice(0, 30), 'verifyUrl:', this.verifyUrl);
     this.tracker = new InvoiceTracker(this.invoice, (status, data) => {
       if (status === 'paid') {
         this.handlePaymentSuccess(data);
@@ -86,9 +93,11 @@ class InvoiceModal {
     }, { 
       paymentHash: this.paymentHash,
       recipientPubkey: this.recipientPubkey,
-      relays: this.relays
+      relays: this.relays,
+      verifyUrl: this.verifyUrl
     });
-    this.tracker.start(3000, 600000);
+    this.tracker.start(2000, 600000);
+    console.log('[InvoiceModal] tracker.start() called, tracker:', !!this.tracker);
   }
 
   stopPolling() {
@@ -99,6 +108,7 @@ class InvoiceModal {
   }
   
   async showInvoiceForm() {
+    console.log('[InvoiceModal] showInvoiceForm called');
     this.state = 'pending';
     const content = document.getElementById('invoice-content');
     

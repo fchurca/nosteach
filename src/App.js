@@ -15,7 +15,21 @@ class App {
     this.roleSelector = null;
     this.userMenu = null;
     this.currentView = 'home';
+    this.initNostrReadOnly();
     this.init();
+  }
+
+  async initNostrReadOnly() {
+    try {
+      const { initNDK, connect } = await import('./lib/nostr.js');
+      initNDK();
+      await connect();
+      const { getNDK } = await import('./lib/nostr.js');
+      this.nostr = getNDK();
+      console.log('Nostr (read-only) inicializado');
+    } catch (err) {
+      console.warn('Error inicializando NDK:', err.message);
+    }
   }
 
   async init() {
@@ -87,11 +101,12 @@ class App {
     }
   }
 
-  onNostrDisconnect() {
+  async onNostrDisconnect() {
     this.pubkey = null;
-    this.nostr = null;
     this.roles = { teacher: false, student: false, sponsor: false };
     this.updateNav();
+    await this.initNostrReadOnly();
+    console.log('Sesión cerrada. reconectado en modo lectura');
   }
 
   loadRoles() {

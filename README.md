@@ -156,6 +156,10 @@ Ver `ROADMAP.md` para detalle completo.
 - Modal con QR dinámico para pago anónimo
 - Polling cada 5 segundos para verificar pago
 - Botón "Cerrar" cambia de amarillo a verde cuando se efectiva el pago
+- **Nota**: La verificación en tiempo real depende del provider de LNURLp. 
+  Algunos providers (como primal.net) no exponen un endpoint público de verificación,
+  por lo que NosTeach usa Nostr zap receipts (kind 9735) para confirmar el pago.
+  Esto puede tardar algunos segundos más en detectarse.
 
 ## Recursos
 
