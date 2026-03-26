@@ -69,6 +69,17 @@ class App {
   initHashRouting() {
     const handleHash = async () => {
       const hash = window.location.hash;
+      
+      if (!hash || hash === '#' || hash === '#/') {
+        window.location.hash = '#/home';
+        return;
+      }
+      
+      if (hash === '#/home') {
+        this.showHome();
+        return;
+      }
+      
       if (hash.startsWith('#/c/')) {
         const eventId = hash.slice(4);
         await this.viewCourse(eventId);
