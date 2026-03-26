@@ -997,7 +997,7 @@ nav button {
 .skeleton {
   background: linear-gradient(90deg, 
     var(--bg-card) 25%, 
-    rgba(255,255,255,0.1) 50%, 
+    rgba(255,255,255,0.08) 50%, 
     var(--bg-card) 75%
   );
   background-size: 200% 100%;
@@ -1008,21 +1008,31 @@ nav button {
 .skeleton-text {
   height: 1em;
   margin-bottom: 0.5em;
+  width: 100%;
 }
 
 .skeleton-text-lg {
   height: 1.5em;
   margin-bottom: 1em;
+  width: 70%;
+}
+
+.skeleton-text-sm {
+  height: 0.8em;
+  margin-bottom: 0.3em;
+  width: 50%;
 }
 
 .skeleton-box {
   height: 100px;
   margin-bottom: 1em;
+  width: 100%;
 }
 
 .skeleton-card {
   height: 120px;
   margin-bottom: 1em;
+  border-radius: var(--radius);
 }
 
 .skeleton-avatar {
@@ -1034,6 +1044,29 @@ nav button {
 .skeleton-button {
   width: 120px;
   height: 40px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+}
+
+/* Skeleton Grid for course list */
+.skeleton-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.skeleton-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 600) {
+  .skeleton-grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Loading Spinner Enhancement */

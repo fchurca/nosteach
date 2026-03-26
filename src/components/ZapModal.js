@@ -30,7 +30,7 @@ class ZapModal {
     this.overlay.id = 'zap-modal-overlay';
     this.overlay.innerHTML = `
       <div class="zap-modal">
-        <button class="zap-modal-close" id="zap-close-btn">Cerrar</button>
+        <button class="zap-modal-close" id="zap-close-btn" aria-label="Cerrar">Cerrar</button>
         <div id="zap-modal-content"></div>
       </div>
     `;

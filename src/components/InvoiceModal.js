@@ -34,7 +34,7 @@ class InvoiceModal {
     this.overlay.id = 'invoice-modal-overlay';
     this.overlay.innerHTML = `
       <div class="invoice-modal">
-        <button class="invoice-modal-close" id="invoice-close-btn">&times;</button>
+        <button class="invoice-modal-close" id="invoice-close-btn" aria-label="Cerrar">&times;</button>
         <div id="invoice-content">
           <div class="invoice-loading">
             <div class="spinner"></div>
