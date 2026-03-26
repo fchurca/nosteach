@@ -4,12 +4,13 @@ import InvoiceModal from './InvoiceModal.js';
 import { DEBUG } from '../lib/constants.js';
 
 class CourseView {
-  constructor(container, course, nostr, roles, onBack) {
+  constructor(container, course, nostr, roles, onBack, isDirectAccess = false) {
     this.container = container;
     this.course = course;
     this.nostr = nostr;
     this.roles = roles || this.loadRoles();
     this.onBack = onBack;
+    this.isDirectAccess = isDirectAccess;
     this.teacherProfile = null;
     this.hasPaidForExam = false;
     this.render();
@@ -42,6 +43,7 @@ class CourseView {
 
     this.container.innerHTML = `
       <div class="card">
+        ${!this.isDirectAccess ? `
         <nav class="breadcrumb" style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted);">
           <a href="#" onclick="window.app?.navigate('home'); return false;" style="color: var(--accent);">Inicio</a>
           <span style="margin: 0 8px;">›</span>
@@ -53,6 +55,7 @@ class CourseView {
         <button onclick="window.app?.navigate('courses')" class="btn-secondary" style="margin-bottom: 15px;">
           ← Volver
         </button>
+        ` : ''}
 
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
           <div>

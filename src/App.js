@@ -67,9 +67,12 @@ class App {
   }
 
   initHashRouting() {
-    const handleHash = () => {
+    const handleHash = async () => {
       const hash = window.location.hash;
-      if (hash.startsWith('#/p/')) {
+      if (hash.startsWith('#/c/')) {
+        const eventId = hash.slice(4);
+        await this.viewCourse(eventId);
+      } else if (hash.startsWith('#/p/')) {
         const npub = hash.slice(4);
         try {
           const decoded = nip19.decode(npub);
@@ -412,7 +415,7 @@ class App {
       <div class="card">
         <h2>📚 Explorar Cursos</h2>
         <p>Todos los cursos publicados en Nostr.</p>
-        <div id="courses-container">
+        <div id="courses-container" data-loading="true">
           <div class="skeleton skeleton-card"></div>
           <div class="skeleton skeleton-card"></div>
           <div class="skeleton skeleton-card"></div>
@@ -482,6 +485,11 @@ class App {
     const container = document.getElementById('courses-container');
     if (!container) return;
 
+    if (container.dataset.loading === 'true' && events.length === 0) {
+      return;
+    }
+    container.dataset.loading = 'false';
+
     if (events.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
@@ -509,7 +517,11 @@ class App {
         
         return `
           <div class="course-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-bottom: 15px;">
-            <h3 style="margin-bottom: 5px;">${content.titulo || 'Sin título'}</h3>
+            <h3 style="margin-bottom: 5px;">
+              <a href="#/c/${event.id}" onclick="event.preventDefault(); window.app?.viewCourse('${event.id}', false); return false;" style="color: inherit; text-decoration: none;">
+                ${content.titulo || 'Sin título'}
+              </a>
+            </h3>
             <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 10px;">
               <a href="#" onclick="event.preventDefault(); window.app?.viewTeacherProfile('${event.pubkey}');" class="teacher-link">${displayName}</a>
             </div>
@@ -520,7 +532,7 @@ class App {
               <span>❓ ${preguntas} preguntas</span>
             </div>
             <div style="margin-top: 15px; display: flex; gap: 10px;">
-              <button onclick="window.app?.viewCourse('${event.id}')" class="btn-secondary">Ver más</button>
+              <button onclick="window.app?.viewCourse('${event.id}', false)" class="btn-secondary">Ver más</button>
               ${this.roles.student ? '<button onclick="window.app?.enrollCourse(\'' + event.id + '\')">Inscribirse</button>' : ''}
             </div>
           </div>
@@ -532,9 +544,13 @@ class App {
     }).join('');
   }
 
-  async viewCourse(eventId) {
+  async viewCourse(eventId, isDirectAccess = true) {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
+
+    if (isDirectAccess) {
+      history.pushState(null, '', `#/c/${eventId}`);
+    }
 
     contentArea.innerHTML = '<div class="card"><div class="skeleton skeleton-box"></div><div class="skeleton skeleton-text"></div></div>';
 
@@ -552,7 +568,7 @@ class App {
       const course = events[0];
       new CourseView(contentArea, course, this.nostr, this.roles, () => {
         this.navigate('courses');
-      });
+      }, isDirectAccess);
     } catch (err) {
       contentArea.innerHTML = `<div class="card"><h2>❌ Error: ${err.message}</h2></div>`;
     }
@@ -664,7 +680,11 @@ class App {
 
         return `
           <div class="course-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-bottom: 15px;">
-            <h3 style="margin-bottom: 5px;">${content.titulo || 'Sin título'}</h3>
+            <h3 style="margin-bottom: 5px;">
+              <a href="#/c/${event.id}" onclick="event.preventDefault(); window.app?.navigateToCourse('${event.id}'); return false;" style="color: inherit; text-decoration: none;">
+                ${content.titulo || 'Sin título'}
+              </a>
+            </h3>
             <div style="display: flex; gap: 15px; font-size: 0.9rem; margin-bottom: 10px;">
               <span style="color: #00ff9d;">💰 ${precioText}</span>
               <span>📚 ${modulos} módulos</span>
@@ -716,7 +736,7 @@ class App {
   }
 
   navigateToCourse(eventId) {
-    this.viewCourse(eventId);
+    this.viewCourse(eventId, false);
   }
 
   showCourseForm() {

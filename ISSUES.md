@@ -90,9 +90,18 @@ Cuando los relays están caídos o no responden, el usuario no tiene feedback de
 
 ---
 
-### 🆕 7. URLs profundas (accesibles desde bookmarks)
+### ✅ 7. URLs profundas (accesibles desde bookmarks)
 **Ubicación**: `src/App.js`
 
 El usuario no puede acceder directamente a cursos o docentes via URL (ej: `#/c/{eventId}`).
 
-**Solución**: Agregar rutas hash para cursos similares a las existentes para perfiles (`#/p/{npub}`).
+**Solución**: Agregada ruta `#/c/{eventId}` en initHashRouting. CourseView ahora recibe `isDirectAccess` para no mostrar breadcrumb si viene de URL directa (bookmark). Breadcrumbs solo aparecen cuando navega internamente.
+
+---
+
+### 🆕 8. Vista de usuario con /u/
+**Ubicación**: `src/App.js`
+
+Agregar ruta `#/u/{npub}` que muestre vista de usuario con sus cursos publicados.
+
+**Solución**: Similar a `/p/` pero incluyendo lista de cursos del usuario.
