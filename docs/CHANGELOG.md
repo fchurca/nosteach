@@ -1,19 +1,25 @@
 # Changelog - NosTeach
 
-## 2026-03-27 (Navigation + Deep Links + Docs)
+## 2026-03-27 (Navigation + Deep Links + Breadcrumbs)
 
 ### Added
-- **Deep linking**: Ruteo con URLs profundas para cursos (#/course/...)
-- **Home unificado**: Ruta #/home muestra vista principal
-- **Logo interactivo**: Mejor UX del logo (cliqueable)
+- **Breadcrumbs dinámicos**: Historial de navegación con click para navegar y popear
+- **Perfiles de usuario**: Ruteo #/p/{npub} para perfiles públicos
+- **Mi Cuenta**: Nueva vista #/p con link a perfil público
+- **URLs profundas**: #/c/{id}, #/p/{npub}, #/c/{id}/r
+- **Footer emojis**: 🐱 GitHub, ⚡ Lightning Hackathons, 🏯 La Crypta, 🦤 Nostr
 
 ### Fixed
+- **Header sticky**: Restaurado con breadcrumb en segunda fila
+- **Login panel**: Fondo agregado para coincidir con dropdown
 - **Migración NDK → SimplePool**: Corregido routing de URLs profundas
+
+### Refactor
+- **TeacherProfile → UserProfile**: Componente renombrado para vistas genéricas
 
 ### Docs
 - **Pitch**: Notas de presentación para FOUNDATIONS hackathon
 - **Reorganización**: Documentación movida a docs/
-- **Git**: Agregadas verificaciones de status antes de operaciones
 
 ---
 
