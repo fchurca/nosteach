@@ -191,6 +191,13 @@ docs: actualizar ROADMAP con estado actual
 
 ---
 
+### 5. Antes de Commit
+
+- Cuando el usuario pida un commit message, además proponer actualizar el changelog
+- Si no hay cambios relevantes, avisar explícitamente
+
+---
+
 ## Estructura del Proyecto
 
 ```
