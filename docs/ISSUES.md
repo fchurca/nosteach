@@ -64,11 +64,16 @@ Hay demasiadas sentencias de debug que ensucian la consola en producción.
 ## 🟡 Media Prioridad (UX/funcionalidad)
 
 ### ✅ 4. Breadcrumbs: Navegación sin indicador de ruta
-**Ubicación**: `src/components/CourseView.js`
+**Ubicación**: `src/components/CourseView.js`, `src/App.js`
 
 Cuando el usuario navega a un curso desde la lista, no hay manera de saber desde dónde vino o cómo volver facilmente.
 
-**Solución**: Agregar breadcrumb a CourseView, TeacherProfile y EvaluationList con estilos CSS.
+**Solución implementada**: Sistema de breadcrumb dinámico con historial en App.js:
+- Breadcrumb centralizado en header (fila inferior)
+- Historial de navegación que se actualiza al navegar
+- Click en breadcrumb navega y hace pop del historial
+- Oculta primeros items si hay más de 5
+- Se reconstruye desde URL en deep links
 
 ---
 
@@ -99,9 +104,27 @@ El usuario no puede acceder directamente a cursos o docentes via URL (ej: `#/c/{
 
 ---
 
+### ✅ 7. URLs profundas (accesibles desde bookmarks)
+**Ubicación**: `src/App.js`
+
+El usuario no puede acceder directamente a cursos o docentes via URL (ej: `#/c/{eventId}`).
+
+**Solución**: Agregada ruta `#/c/{eventId}` en initHashRouting. CourseView ahora recibe `isDirectAccess` para no mostrar breadcrumb si viene de URL directa (bookmark). Breadcrumbs solo aparecen cuando navega internamente.
+
+---
+
 ### 🆕 8. Vista de usuario con /u/
 **Ubicación**: `src/App.js`
 
 Agregar ruta `#/u/{npub}` que muestre vista de usuario con sus cursos publicados.
 
 **Solución**: Similar a `/p/` pero incluyendo lista de cursos del usuario.
+
+---
+
+## ✅ Completados Recientemente
+
+- Sistema de breadcrumbs dinámicos con historial de navegación
+- Header sticky con breadcrumb en segunda fila
+- Footer con emojis en links
+- Login panel con mismo estilo que dropdown
