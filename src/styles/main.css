@@ -25,7 +25,7 @@ body {
   background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   min-height: 100vh;
   color: var(--text-primary);
-  padding: 20px;
+  padding: 0;
   line-height: 1.6;
 }
 

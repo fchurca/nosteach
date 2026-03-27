@@ -187,11 +187,10 @@ class App {
 
     app.innerHTML = `
       <div class="container">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <div>
-            <h1 style="margin: 0; cursor: pointer; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,255,157,0.1)'" onmouseout="this.style.background='transparent'" onclick="window.app?.navigate('home')"><a href="#" onclick="return false;" style="color: inherit; text-decoration: none;">⚡ <span>NosTeach</span></a></h1>
-            <p class="subtitle" style="margin: 5px 0 0;">Plataforma educativa descentralizada</p>
-            <div id="connection-status" class="connection-status" style="font-size: 0.75rem; margin-top: 4px; display: none;">
+        <header style="position: sticky; top: 0; z-index: 100; background: var(--bg-primary); padding: 6px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); width: 100%; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <h1 style="margin: 0; cursor: pointer; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,255,157,0.1)'" onmouseout="this.style.background='transparent'" onclick="window.app?.navigate('home')"><a href="#" onclick="return false;" style="color: inherit; text-decoration: none; font-size: 1.1rem;">⚡ <span>NosTeach</span></a></h1>
+            <div id="connection-status" class="connection-status" style="font-size: 0.75rem; display: none;">
               <span class="status-dot"></span> <span class="status-text">Conectando...</span>
             </div>
           </div>
@@ -206,6 +205,7 @@ class App {
         <div id="content-area"></div>
 
         <div class="footer">
+          <p class="subtitle">NosTeach: educación descentralizada</p>
           <p>
             <a href="https://github.com/fchurca/nosteach" target="_blank">GitHub</a> ·
             <a href="https://hackaton.lacrypta.ar" target="_blank">Lightning Hackathons 2026</a> · 
