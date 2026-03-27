@@ -1,129 +1,157 @@
+import { formatAuthorName, getLud16, ZAP_AMOUNTS } from '../lib/lightning.js';
+import ZapModal from './ZapModal.js';
+import { DEBUG } from '../lib/constants.js';
+import { queryEvents } from '../lib/nostr.js';
+
 class UserProfile {
-  constructor(container, nostrConnect) {
+  constructor(container, pubkey, nostr) {
     this.container = container;
-    this.nostr = nostrConnect;
+    this.pubkey = pubkey;
+    this.nostr = nostr;
     this.profile = null;
-    this.roles = { teacher: false, student: false, sponsor: false };
+    this.courses = [];
+    this.zapModal = null;
   }
 
   async load() {
-    if (!this.nostr?.pubkey) return;
+    if (!this.nostr || !this.pubkey) return;
 
     try {
-      const events = await this.nostr.query({
-        kinds: [0],
-        authors: [this.nostr.pubkey]
-      });
+      const [profileEvents, courseEvents] = await Promise.all([
+        queryEvents({
+          kinds: [0],
+          authors: [this.pubkey],
+          limit: 1
+        }),
+        queryEvents({
+          kinds: [30078],
+          authors: [this.pubkey],
+          '#t': ['nosteach']
+        })
+      ]);
 
-      if (events.length > 0) {
-        this.profile = JSON.parse(events[0].content);
-        
-        if (this.profile.nosteach_roles) {
-          this.roles = { ...this.roles, ...this.profile.nosteach_roles };
-        }
+      if (profileEvents.length > 0) {
+        this.profile = JSON.parse(profileEvents[0].content);
       }
+
+      this.courses = courseEvents;
     } catch (err) {
-      console.warn('Error loading profile:', err);
+      console.warn('Error loading teacher profile:', err);
     }
   }
 
   render() {
     if (!this.container) return;
 
-    const roles = this.nostr?.profile || {};
-    const npub = this.nostr?.npub || '';
+    const displayName = formatAuthorName(
+      this.profile?.display_name || this.profile?.name,
+      this.pubkey
+    );
+    const lud16 = getLud16(this.profile);
 
     this.container.innerHTML = `
       <div class="card">
-        <h2>👤 Mi Perfil</h2>
-        
-        <div class="profile-info" style="margin-bottom: 20px;">
-          <div style="margin-bottom: 10px;">
-            <strong>Nombre:</strong> ${roles.display_name || roles.name || 'No configurado'}
-          </div>
-          <div style="margin-bottom: 10px;">
-            <strong>Lightning:</strong> 
-            ${roles.lud16 || roles.lnurl ? 
-              `<code style="background: rgba(0,255,157,0.1); padding: 2px 8px; border-radius: 4px;">${roles.lud16 || 'LNURL configurado'}</code>` : 
-              '<span style="color: var(--warning);">⚠️ No configurado</span>'}
-          </div>
-          <div style="margin-bottom: 10px;">
-            <strong>npub:</strong> 
-            <code style="font-size: 0.85em;">${npub.slice(0, 20)}...</code>
-          </div>
+        <div class="teacher-profile-header">
+          <h2>👤 ${displayName}</h2>
+          ${lud16 ? `
+            <div class="teacher-lightning">
+              <span class="lightning-label">⚡ Lightning:</span>
+              <code class="lightning-address">${lud16}</code>
+            </div>
+          ` : `
+            <div class="teacher-no-lightning">
+              <span>⚠️ Sin Lightning configurado</span>
+            </div>
+          `}
         </div>
 
-        <h3 style="margin-bottom: 10px;">🎭 Mis Roles</h3>
-        <div id="profile-roles"></div>
+        ${lud16 ? `
+          <div class="teacher-zap-section">
+            <button id="zap-teacher-btn" class="btn-primary" style="width: 100%;">
+              Apoyar con sats
+            </button>
+          </div>
+        ` : ''}
+      </div>
 
-        <h3 style="margin: 20px 0 10px;">⚡ Configuración de Zap</h3>
-        <div class="zap-config">
-          <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-            <input type="radio" name="zapper" value="delegated" checked>
-            <span>Delegado (QR/wallet externa)</span>
-          </label>
-          <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-            <input type="radio" name="zapper" value="nwc">
-            <span>NWC (directo desde app)</span>
-          </label>
-          <label for="nwc-url" style="display: block; margin-bottom: 4px; font-size: 0.9rem;">URL de conexión NWC</label>
-          <input type="text" id="nwc-url" placeholder="nostr+walletconnect://..." style="display: none;">
+      <div class="card" style="margin-top: 20px;">
+        <h3>📚 Cursos Publicados (${this.courses.length})</h3>
+        <div id="teacher-courses-list">
+          ${this.courses.length === 0 ? `
+            <p class="empty-text">No hay cursos publicados aún.</p>
+          ` : this.courses.map(course => this.renderCourseCard(course)).join('')}
         </div>
-
-        <button id="save-profile-btn" class="btn-secondary">Guardar en Nostr</button>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">
-          Los roles y configuración se guardan en tu evento de perfil (kind 0) de Nostr.
-        </p>
       </div>
     `;
 
     this.attachListeners();
-    this.load();
+  }
+
+  renderCourseCard(course) {
+    try {
+      const content = typeof course.content === 'string' 
+        ? JSON.parse(course.content) 
+        : course.content;
+      const precio = content.precio || 0;
+      const precioText = precio === 0 ? 'Gratis' : `${precio} sats`;
+      const preguntas = (content.evaluacion?.preguntas || []).length;
+      const modulos = (content.modulos || []).length;
+
+      return `
+        <div class="course-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-bottom: 10px;">
+          <h4 style="margin-bottom: 5px;">${content.titulo || 'Sin título'}</h4>
+          <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 10px;">
+            ${content.descripcion || ''}
+          </p>
+          <div style="display: flex; gap: 15px; font-size: 0.85rem;">
+            <span style="color: #00ff9d;">💰 ${precioText}</span>
+            <span>📚 ${modulos} módulos</span>
+            <span>❓ ${preguntas} preguntas</span>
+          </div>
+          <button onclick="window.app?.viewCourse('${course.id}')" class="btn-secondary" style="margin-top: 10px;">
+            Ver Curso
+          </button>
+        </div>
+      `;
+    } catch (err) {
+      return '';
+    }
   }
 
   attachListeners() {
-    const nwcRadio = document.querySelector('input[name="zapper"][value="nwc"]');
-    const delegatedRadio = document.querySelector('input[name="zapper"][value="delegated"]');
-    const nwcInput = document.getElementById('nwc-url');
-    const saveBtn = document.getElementById('save-profile-btn');
-
-    if (nwcRadio && nwcInput) {
-      nwcRadio.addEventListener('change', () => {
-        nwcInput.style.display = nwcRadio.checked ? 'block' : 'none';
-      });
-    }
-
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => this.saveProfile());
+    const zapBtn = document.getElementById('zap-teacher-btn');
+    
+    if (zapBtn) {
+      zapBtn.addEventListener('click', () => this.openZapModal());
     }
   }
 
-  async saveProfile() {
-    if (!this.nostr?.pubkey) {
-      window.toast?.warning('Primero conectá tu identidad Nostr');
-      return;
-    }
+  openZapModal() {
+    const lud16 = getLud16(this.profile);
+    if (!lud16) return;
 
-    const zapperType = document.querySelector('input[name="zapper"]:checked')?.value || 'delegated';
-    const nwcUrl = document.getElementById('nwc-url')?.value || '';
+    const displayName = this.profile?.display_name || this.profile?.name || 'Profesor';
 
-    const profileUpdate = {
-      ...this.profile,
-      nosteach_roles: this.roles,
-      nosteach_zapper: zapperType,
-      ...(nwcUrl ? { nosteach_nwc: nwcUrl } : {})
-    };
+    this.zapModal = new ZapModal({
+      recipientPubkey: this.pubkey,
+      recipientName: displayName,
+      recipientLud16: lud16,
+      amounts: ZAP_AMOUNTS,
+      customMax: 10000,
+      onSuccess: (result, amount) => {
+        if (DEBUG) console.log('Zap exitoso:', result);
+      },
+      onError: (err) => {
+        console.error('Error en zap:', err);
+      }
+    });
 
-    const event = {
-      kind: 0,
-      content: JSON.stringify(profileUpdate)
-    };
+    this.zapModal.show();
+  }
 
-    try {
-      await this.nostr.publish(0, event.content, []);
-      window.toast?.success('✅ Perfil guardado en Nostr');
-    } catch (err) {
-      window.toast?.error('❌ Error al guardar: ' + err.message);
+  destroy() {
+    if (this.zapModal) {
+      this.zapModal.destroy();
     }
   }
 }

@@ -113,12 +113,16 @@ El usuario no puede acceder directamente a cursos o docentes via URL (ej: `#/c/{
 
 ---
 
-### 🆕 8. Vista de usuario con /u/
+### ✅ 8. Vista de usuario con /p/
 **Ubicación**: `src/App.js`
 
-Agregar ruta `#/u/{npub}` que muestre vista de usuario con sus cursos publicados.
+Agregar ruta `#/p/{npub}` que muestre vista de usuario con sus cursos publicados.
 
-**Solución**: Similar a `/p/` pero incluyendo lista de cursos del usuario.
+**Solución implementada**: 
+- Ruta `#/p` muestra "Mi Cuenta" del usuario logueado
+- Ruta `#/p/{npub}` muestra perfil público de cualquier usuario
+- Componente UserProfile (renombrado de TeacherProfile)
+- Vista incluye link a "Mi perfil público" en Mi Cuenta
 
 ---
 
@@ -128,3 +132,8 @@ Agregar ruta `#/u/{npub}` que muestre vista de usuario con sus cursos publicados
 - Header sticky con breadcrumb en segunda fila
 - Footer con emojis en links
 - Login panel con mismo estilo que dropdown
+- Ruteo con URLs profundas: #/c/{id}, #/p/{npub}, #/c/{id}/r
+- Vista de perfil de usuario (#/p/{npub})
+- Mi Cuenta (#/p) con link a perfil público
+- Renombrado TeacherProfile → UserProfile para vistas genéricas
+- Breadcrumbs se actualizan al navegar, click navega y popea historial

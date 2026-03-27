@@ -203,8 +203,7 @@ class CourseView {
       teacherLink.addEventListener('click', (e) => {
         e.preventDefault();
         if (window.app) {
-          const content = typeof this.course.content === 'string' ? JSON.parse(this.course.content) : this.course.content;
-          window.app.viewTeacherProfile(this.course.pubkey);
+          window.app.viewUserProfile(this.course.pubkey);
         }
       });
     }

@@ -1,7 +1,7 @@
 import UserMenu from './components/UserMenu.js';
 import RoleSelector, { ROLES_KEY } from './components/RoleSelector.js';
 import CourseView from './components/CourseView.js';
-import TeacherProfile from './components/TeacherProfile.js';
+import UserProfile from './components/UserProfile.js';
 import EvaluationList from './components/EvaluationList.js';
 import { validateCurso } from './lib/schema.js';
 import { formatAuthorName } from './lib/lightning.js';
@@ -118,7 +118,7 @@ class App {
           if (decoded && decoded.type === 'npub') {
             this.breadcrumbHistory = [];
             this.renderBreadcrumb();
-            await this.viewTeacherProfile(decoded.data);
+            await this.viewUserProfile(decoded.data);
           }
         } catch (err) {
           console.warn('Invalid npub in hash:', err.message);
@@ -305,7 +305,7 @@ class App {
 
   navigate(view) {
     if (typeof view === 'object' && view.view === 'profile') {
-      this.viewTeacherProfile(view.pubkey);
+      this.viewUserProfile(view.pubkey);
       return;
     }
 
@@ -624,7 +624,7 @@ class App {
               </a>
             </h3>
             <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 10px;">
-              <a href="#" onclick="event.preventDefault(); window.app?.viewTeacherProfile('${event.pubkey}');" class="teacher-link">${displayName}</a>
+              <a href="#" onclick="event.preventDefault(); window.app?.viewUserProfile('${event.pubkey}');" class="teacher-link">${displayName}</a>
             </div>
             <p style="color: rgba(255,255,255,0.7); margin-bottom: 10px;">${content.descripcion || ''}</p>
             <div style="display: flex; gap: 15px; font-size: 0.9rem;">
@@ -680,7 +680,7 @@ class App {
     }
   }
 
-  async viewTeacherProfile(pubkey) {
+  async viewUserProfile(pubkey) {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
 
@@ -707,13 +707,13 @@ class App {
     `;
 
     try {
-      const teacherProfile = new TeacherProfile(contentArea, pubkey, this.nostr);
-      await teacherProfile.load();
-      teacherProfile.render();
-      this.currentTeacherProfile = teacherProfile;
+      const userProfile = new UserProfile(contentArea, pubkey, this.nostr);
+      await userProfile.load();
+      userProfile.render();
+      this.currentUserProfile = userProfile;
 
-      const teacherName = teacherProfile.profile?.display_name || teacherProfile.profile?.name || pubkey.slice(0, 8);
-      this.pushBreadcrumb(teacherName, `window.app?.viewTeacherProfile('${pubkey}')`);
+      const userName = userProfile.profile?.display_name || userProfile.profile?.name || pubkey.slice(0, 8);
+      this.pushBreadcrumb(userName, `window.app?.viewUserProfile('${pubkey}')`);
     } catch (err) {
       contentArea.innerHTML = `<div class="card"><h2>❌ Error: ${err.message}</h2></div>`;
     }
