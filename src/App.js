@@ -81,12 +81,10 @@ class App {
     const handleHash = async () => {
       const hash = window.location.hash;
       
-      if (!hash || hash === '#' || hash === '#/') {
-        window.location.hash = '#/home';
-        return;
-      }
+      const isHome = !hash || hash === '' || hash === '#' || hash === '#/' || hash === '#/home' || hash === '#/home/';
       
-      if (hash === '#/home') {
+      if (isHome) {
+        history.pushState(null, '', '/');
         this.showHome();
         return;
       }
@@ -191,14 +189,13 @@ class App {
       <div class="container">
         <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <div>
-            <h1 style="margin: 0;"><a href="#" onclick="window.app?.navigate('home'); return false;" style="color: inherit; text-decoration: none;">⚡ <span>NosTeach</span></a></h1>
+            <h1 style="margin: 0; cursor: pointer; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,255,157,0.1)'" onmouseout="this.style.background='transparent'" onclick="window.app?.navigate('home')"><a href="#" onclick="return false;" style="color: inherit; text-decoration: none;">⚡ <span>NosTeach</span></a></h1>
             <p class="subtitle" style="margin: 5px 0 0;">Plataforma educativa descentralizada</p>
             <div id="connection-status" class="connection-status" style="font-size: 0.75rem; margin-top: 4px; display: none;">
               <span class="status-dot"></span> <span class="status-text">Conectando...</span>
             </div>
           </div>
           <nav style="display: flex; gap: 10px; align-items: center;">
-            <button class="btn-secondary" onclick="window.app?.navigate('home')">🏠 Inicio</button>
             <button class="btn-secondary" onclick="window.app?.navigate('courses')">📚 Explorar</button>
             <button id="nav-my-courses" class="btn-secondary" onclick="window.app?.navigate('my-courses')" style="display: none;">📊 Mis Cursos</button>
             <button id="nav-create-course" class="btn-secondary" onclick="window.app?.navigate('create-course')" style="display: none;">✏️ Crear Curso</button>
@@ -244,6 +241,7 @@ class App {
 
     switch (view) {
       case 'home':
+        history.pushState(null, '', '/');
         this.showHome();
         break;
       case 'courses':
