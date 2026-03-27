@@ -1,6 +1,7 @@
 import { formatAuthorName, getLud16, ZAP_AMOUNTS } from '../lib/lightning.js';
 import ZapModal from './ZapModal.js';
 import { DEBUG } from '../lib/constants.js';
+import { queryEvents } from '../lib/nostr.js';
 
 class TeacherProfile {
   constructor(container, pubkey, nostr) {
@@ -17,12 +18,12 @@ class TeacherProfile {
 
     try {
       const [profileEvents, courseEvents] = await Promise.all([
-        this.nostr.query({
+        queryEvents({
           kinds: [0],
           authors: [this.pubkey],
           limit: 1
         }),
-        this.nostr.query({
+        queryEvents({
           kinds: [30078],
           authors: [this.pubkey],
           '#t': ['nosteach']

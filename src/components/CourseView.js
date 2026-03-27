@@ -2,6 +2,7 @@ import ZapButton from './ZapButton.js';
 import { fetchProfile, getLud16, isWebLNAvailable, formatAuthorName } from '../lib/lightning.js';
 import InvoiceModal from './InvoiceModal.js';
 import { DEBUG } from '../lib/constants.js';
+import { queryEvents } from '../lib/nostr.js';
 
 class CourseView {
   constructor(container, course, nostr, roles, onBack, isDirectAccess = false) {
@@ -167,7 +168,7 @@ class CourseView {
     if (!this.nostr || !this.course.pubkey) return;
     
     try {
-      const events = await this.nostr.query({
+      const events = await queryEvents({
         kinds: [0],
         authors: [this.course.pubkey],
         limit: 1

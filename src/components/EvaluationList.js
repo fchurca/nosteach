@@ -1,6 +1,7 @@
 import ZapButton from './ZapButton.js';
 import InvoiceModal from './InvoiceModal.js';
 import { fetchProfile, getLud16, isWebLNAvailable } from '../lib/lightning.js';
+import { queryEvents } from '../lib/nostr.js';
 
 class EvaluationList {
   constructor(container, courseId, course, nostr, onBack) {
@@ -58,7 +59,7 @@ class EvaluationList {
 
   async loadResponses() {
     try {
-      const events = await this.nostr.query({
+      const events = await queryEvents({
         kinds: [1],
         '#e': [this.courseId],
         '#t': ['nosteach-evaluacion']

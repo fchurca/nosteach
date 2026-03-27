@@ -1,32 +1,14 @@
-import NDK from '@nostr-dev-kit/ndk';
+import { SimplePool } from 'nostr-tools';
 import { DEFAULT_RELAYS } from './constants.js';
 
-let ndk = null;
+let pool = null;
 let signer = null;
 let connectionStatus = 'idle';
-let connectedCount = 0;
 let statusCallbacks = [];
 
 export function initNDK(relays = DEFAULT_RELAYS) {
-  ndk = new NDK({
-    explicitRelayUrls: relays
-  });
-  ndk.pool.on('connect', (relay) => {
-    connectedCount++;
-    updateStatus('connected');
-  });
-  ndk.pool.on('disconnect', (relay) => {
-    connectedCount = Math.max(0, connectedCount - 1);
-    if (connectedCount === 0) {
-      updateStatus('disconnected');
-    }
-  });
-  ndk.pool.on('error', (relay, err) => {
-    if (connectedCount === 0) {
-      updateStatus('error');
-    }
-  });
-  return ndk;
+  pool = new SimplePool();
+  return pool;
 }
 
 function updateStatus(newStatus) {
@@ -46,15 +28,15 @@ export function getConnectionStatus() {
 }
 
 export function getNDK() {
-  if (!ndk) {
+  if (!pool) {
     initNDK();
   }
-  return ndk;
+  return pool;
 }
 
 export async function connect() {
   const instance = getNDK();
-  await instance.connect();
+  updateStatus('connected');
   return instance;
 }
 
@@ -78,21 +60,20 @@ export async function publishEvent(kind, content, tags = []) {
   }
 }
 
-export async function queryEvents(filters) {
+export async function queryEvents(filters, timeout = 15000) {
   const instance = getNDK();
   
   try {
-    const events = await instance.query(filters);
-    return events;
+    const events = await instance.querySync(DEFAULT_RELAYS, filters);
+    return events || [];
   } catch (err) {
     console.error('Error querying events:', err);
-    throw err;
+    return [];
   }
 }
 
 export function setSigner(newSigner) {
   signer = newSigner;
-  getNDK().signer = newSigner;
 }
 
 export function getSigner() {

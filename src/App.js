@@ -7,7 +7,7 @@ import { validateCurso } from './lib/schema.js';
 import { formatAuthorName } from './lib/lightning.js';
 import { nip19 } from 'nostr-tools';
 import { DEBUG } from './lib/constants.js';
-import { onConnectionStatusChange, getConnectionStatus } from './lib/nostr.js';
+import { onConnectionStatusChange, getConnectionStatus, queryEvents, getNDK } from './lib/nostr.js';
 
 class App {
   constructor() {
@@ -28,9 +28,8 @@ class App {
       await connect();
       const { getNDK } = await import('./lib/nostr.js');
       this.nostr = getNDK();
-      if (DEBUG) console.log('Nostr (read-only) inicializado');
     } catch (err) {
-      console.warn('Error inicializando NDK:', err.message);
+      console.warn('Error inicializando Nostr:', err.message);
     }
   }
 
@@ -39,6 +38,18 @@ class App {
     this.render();
     this.initHashRouting();
     this.initConnectionStatus();
+  }
+
+  async waitForNostr(timeout = 10000) {
+    if (this.nostr) return;
+    
+    const start = Date.now();
+    while (!this.nostr) {
+      if (Date.now() - start > timeout) {
+        throw new Error('Timeout esperando conexión Nostr');
+      }
+      await new Promise(r => setTimeout(r, 100));
+    }
   }
 
   initConnectionStatus() {
@@ -128,7 +139,6 @@ class App {
     this.nostr = nostrInstance;
     if (DEBUG) console.log('Nostr conectado:', pubkey);
     this.loadRoles();
-    this.refreshCurrentView();
   }
 
   refreshAccount() {
@@ -138,7 +148,10 @@ class App {
   }
 
   refreshCurrentView() {
-    if (this.currentView) {
+    const hash = window.location.hash;
+    const isDeepLink = hash.startsWith('#/c/') || hash.startsWith('#/p/');
+    
+    if (this.currentView && !isDeepLink) {
       this.navigate(this.currentView);
     }
   }
@@ -217,7 +230,6 @@ class App {
     }
 
     window.app = this;
-    this.navigate('home');
   }
 
   navigate(view) {
@@ -419,8 +431,19 @@ class App {
   }
 
   async showCourseList() {
+    console.log('showCourseList called, waiting for nostr...');
     const contentArea = document.getElementById('content-area');
-    if (!contentArea) return;
+    if (!contentArea) {
+      console.log('No contentArea');
+      return;
+    }
+
+    try {
+      await this.waitForNostr();
+    } catch (err) {
+      contentArea.innerHTML = '<div class="card"><p>Error de conexión</p></div>';
+      return;
+    }
 
     contentArea.innerHTML = `
       <div class="card">
@@ -434,27 +457,13 @@ class App {
       </div>
     `;
 
-    let timeoutId;
-    const timeoutPromise = new Promise((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error('Timeout de conexión. Los relays no respondieron.')), 15000);
-    });
-
     try {
-      const queryPromise = this.nostr?.query ? this.nostr.query({
-        kinds: [30078],
-        '#t': ['nosteach']
-      }) : Promise.resolve([]);
-
-      const events = await Promise.race([queryPromise, timeoutPromise]);
-      clearTimeout(timeoutId);
+      const events = await queryEvents({ kinds: [30078], '#t': ['nosteach'] });
       
-      // Fetch teacher profiles
       const teacherProfiles = await this.fetchTeacherProfiles(events);
       
       this.renderCourseList(events, teacherProfiles);
     } catch (err) {
-      clearTimeout(timeoutId);
-      console.error('Error querying courses:', err);
       document.getElementById('courses-container').innerHTML = `
         <p class="error-text">Error al cargar cursos: ${err.message}</p>
         <button onclick="window.app?.showCourseList()" class="btn-secondary" style="margin-top: 10px;">Reintentar</button>
@@ -470,7 +479,7 @@ class App {
       // Query profiles for all teachers in parallel
       const profilePromises = pubkeys.map(async (pubkey) => {
         try {
-          const events = await this.nostr.query({
+          const events = await queryEvents({
             kinds: [0],
             authors: [pubkey],
             limit: 1
@@ -559,6 +568,8 @@ class App {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
 
+    await this.waitForNostr();
+
     if (isDirectAccess) {
       history.pushState(null, '', `#/c/${eventId}`);
     }
@@ -566,7 +577,7 @@ class App {
     contentArea.innerHTML = '<div class="card"><div class="skeleton skeleton-box"></div><div class="skeleton skeleton-text"></div></div>';
 
     try {
-      const events = await this.nostr.query({
+      const events = await queryEvents({
         kinds: [30078],
         ids: [eventId]
       });
@@ -656,7 +667,7 @@ class App {
     `;
 
     try {
-      const events = await this.nostr.query({
+      const events = await queryEvents({
         kinds: [30078],
         authors: [myPubkey],
         '#t': ['nosteach']
@@ -726,7 +737,7 @@ class App {
     contentArea.innerHTML = '<div class="card"><div class="skeleton skeleton-box"></div><div class="skeleton skeleton-text"></div></div>';
 
     try {
-      const events = await this.nostr.query({
+      const events = await queryEvents({
         kinds: [30078],
         ids: [courseId]
       });
