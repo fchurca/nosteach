@@ -22,10 +22,10 @@ Probá la versión live: https://nosteach.vercel.app/
 |-----|-------|
 | #/ | Home |
 | #/c | Lista de cursos |
-| #/c/{id} | Detalle de curso |
+| #/c/{id} | Detalle de curso (acepta hex o nevent) |
 | #/c/{id}/r | Respuestas (evaluaciones) |
 | #/p | Mi Cuenta |
-| #/p/{npub} | Perfil público de usuario |
+| #/p/{npub} | Perfil público (acepta hex o npub) |
 
 ---
 

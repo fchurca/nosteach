@@ -3,6 +3,7 @@ import { fetchProfile, getLud16, isWebLNAvailable, formatAuthorName } from '../l
 import InvoiceModal from './InvoiceModal.js';
 import { DEBUG } from '../lib/constants.js';
 import { queryEvents } from '../lib/nostr.js';
+import { nip19 } from 'nostr-tools';
 
 class CourseView {
   constructor(container, course, nostr, roles, onBack, isDirectAccess = false) {
@@ -48,7 +49,13 @@ class CourseView {
           <div>
             <h2 style="margin: 0;">${content.titulo || 'Sin título'}</h2>
             <p style="color: var(--text-muted); margin-top: 5px;">
-              Profesor: <a href="#" id="teacher-name" class="teacher-link">${this.course.pubkey.slice(0, 8)}...${this.course.pubkey.slice(-8)}</a>
+              Profesor: <a href="#/p/${this.course.pubkey}" id="teacher-name" class="teacher-link" style="color: var(--accent);">${this.course.pubkey.slice(0, 8)}...${this.course.pubkey.slice(-8)}</a>
+            </p>
+            <p style="color: var(--text-muted); margin-top: 5px; font-size: 0.75rem; font-family: monospace;">
+              ID: ${this.course.id}
+            </p>
+            <p style="color: var(--text-muted); margin-top: 2px; font-size: 0.75rem; font-family: monospace;">
+              nevent: ${nip19.neventEncode({ id: this.course.id })}
             </p>
           </div>
           <div style="text-align: right;">

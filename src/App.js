@@ -98,7 +98,16 @@ class App {
       }
       
       if (hash.startsWith('#/c/')) {
-        const eventId = hash.slice(4);
+        let eventId = hash.slice(4);
+        // Support nevent or hex event id
+        try {
+          const decoded = nip19.decode(eventId);
+          if (decoded && decoded.type === 'nevent') {
+            eventId = decoded.data.id;
+          }
+        } catch (err) {
+          // Hex id, use as-is
+        }
         this.breadcrumbHistory = [
           { label: 'Cursos', onclickCode: 'window.app?.navigate(\'courses\')' }
         ];
@@ -112,20 +121,30 @@ class App {
           this.navigate('home');
         }
       } else if (hash.startsWith('#/p/')) {
-        const npub = hash.slice(4);
+        let pubkey = hash.slice(4);
+        // Support npub or hex pubkey
         try {
-          const decoded = nip19.decode(npub);
+          const decoded = nip19.decode(pubkey);
           if (decoded && decoded.type === 'npub') {
-            this.breadcrumbHistory = [];
-            this.renderBreadcrumb();
-            await this.viewUserProfile(decoded.data);
+            pubkey = decoded.data;
           }
         } catch (err) {
-          console.warn('Invalid npub in hash:', err.message);
+          // Hex pubkey, use as-is
         }
+        this.breadcrumbHistory = [];
+        this.renderBreadcrumb();
+        await this.viewUserProfile(pubkey);
       } else if (hash.startsWith('#/c/') && hash.includes('/r')) {
-        const parts = hash.slice(4).split('/');
-        const courseId = parts[0];
+        let courseId = hash.slice(4).split('/')[0];
+        // Support nevent or hex event id
+        try {
+          const decoded = nip19.decode(courseId);
+          if (decoded && decoded.type === 'nevent') {
+            courseId = decoded.data.id;
+          }
+        } catch (err) {
+          // Hex id, use as-is
+        }
         this.breadcrumbHistory = [
           { label: 'Cursos', onclickCode: 'window.app?.navigate(\'courses\')' }
         ];
@@ -466,8 +485,11 @@ class App {
           </div>
           <div style="margin-bottom: 10px;">
             <strong>npub:</strong> 
-            <code style="font-size: 0.85em;">${npub.slice(0, 20)}...</code>
-            <a href="#/p/${npub}" style="margin-left: 10px; color: var(--accent);">🔗 Ver mi perfil público</a>
+            <code style="font-size: 0.85em; font-family: monospace;">${npub}</code>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <strong>hex:</strong> 
+            <code style="font-size: 0.85em; font-family: monospace;">${pubkey}</code>
           </div>
           <div style="margin-bottom: 10px;">
             <strong>Roles activos:</strong>
@@ -683,6 +705,8 @@ class App {
   async viewUserProfile(pubkey) {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
+
+    await this.waitForNostr();
 
     const npub = nip19.npubEncode(pubkey);
     history.pushState(null, '', `/#/p/${npub}`);

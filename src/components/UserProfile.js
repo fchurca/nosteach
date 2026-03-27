@@ -2,6 +2,7 @@ import { formatAuthorName, getLud16, ZAP_AMOUNTS } from '../lib/lightning.js';
 import ZapModal from './ZapModal.js';
 import { DEBUG } from '../lib/constants.js';
 import { queryEvents } from '../lib/nostr.js';
+import { nip19 } from 'nostr-tools';
 
 class UserProfile {
   constructor(container, pubkey, nostr) {
@@ -48,11 +49,18 @@ class UserProfile {
       this.pubkey
     );
     const lud16 = getLud16(this.profile);
+    const npub = nip19.npubEncode(this.pubkey);
 
     this.container.innerHTML = `
       <div class="card">
         <div class="teacher-profile-header">
           <h2>👤 ${displayName}</h2>
+          <p style="color: var(--text-muted); margin-top: 5px; font-size: 0.75rem; font-family: monospace;">
+            npub: ${npub}
+          </p>
+          <p style="color: var(--text-muted); margin-top: 2px; font-size: 0.75rem; font-family: monospace;">
+            hex: ${this.pubkey}
+          </p>
           ${lud16 ? `
             <div class="teacher-lightning">
               <span class="lightning-label">⚡ Lightning:</span>

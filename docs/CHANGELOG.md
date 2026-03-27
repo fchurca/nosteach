@@ -1,6 +1,6 @@
 # Changelog - NosTeach
 
-## 2026-03-27 (Navigation + Deep Links + Breadcrumbs)
+## 2026-03-27 (Navigation + Deep Links + Breadcrumbs + IDs)
 
 ### Added
 - **Breadcrumbs dinámicos**: Historial de navegación con click para navegar y popear
@@ -8,6 +8,12 @@
 - **Mi Cuenta**: Nueva vista #/p con link a perfil público
 - **URLs profundas**: #/c/{id}, #/p/{npub}, #/c/{id}/r
 - **Footer emojis**: 🐱 GitHub, ⚡ Lightning Hackathons, 🏯 La Crypta, 🦤 Nostr
+- **Soporte nevent**: URLs de cursos aceptan #/c/{nevent}
+- **Soporte hex**: URLs de perfiles aceptan #/p/{hex}
+- **IDs en curso**: Muestra ID (hex) y nevent completos
+- **IDs en perfil**: Muestra npub y hex completos
+- **Link a profesor**: En vista de curso, link al perfil
+- **Espera de conexión**: waitForNostr antes de cargar perfil
 
 ### Fixed
 - **Header sticky**: Restaurado con breadcrumb en segunda fila
