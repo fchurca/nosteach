@@ -1,5 +1,41 @@
 # Changelog - NosTeach
 
+## 2026-03-27 (Navigation + Deep Links + Docs)
+
+### Added
+- **Deep linking**: Ruteo con URLs profundas para cursos (#/course/...)
+- **Home unificado**: Ruta #/home muestra vista principal
+- **Logo interactivo**: Mejor UX del logo (cliqueable)
+
+### Fixed
+- **Migración NDK → SimplePool**: Corregido routing de URLs profundas
+
+### Docs
+- **Pitch**: Notas de presentación para FOUNDATIONS hackathon
+- **Reorganización**: Documentación movida a docs/
+- **Git**: Agregadas verificaciones de status antes de operaciones
+
+---
+
+## 2026-03-26 (UX + Payments)
+
+### Added
+- **Breadcrumbs**: Navegación mejorada con indicador de conexión
+- **Skeleton loaders**: Mejora de UX durante carga
+- **Toast notifications**: En lugar de alerts nativos
+- **Demo**: Preparación de demo funcional
+
+### Fixed
+- **loadRoles() duplicado**: Eliminado, unificada storage key
+- **Console.log**: Reducidos con flag DEBUG configurable
+- **Aria-labels**: Agregados a botones de cierre
+- **Verificación de pagos**: Avances en InvoiceTracker
+
+### Chore
+- **AGENTS.md**: Reglas para no commitear .secrets
+
+---
+
 ## 2026-03-19 (UX Fixes + Payment Monitoring)
 
 ### Added
