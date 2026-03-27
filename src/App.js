@@ -131,15 +131,19 @@ class App {
   }
 
   popBreadcrumbTo(index) {
+    const item = this.breadcrumbHistory[index];
     this.breadcrumbHistory = this.breadcrumbHistory.slice(0, index + 1);
     this.renderBreadcrumb();
+    if (item && item.onclickCode) {
+      eval(item.onclickCode);
+    }
   }
 
   renderBreadcrumb() {
     const breadcrumb = document.getElementById('breadcrumb');
     if (!breadcrumb) return;
 
-    if (this.breadcrumbHistory.length === 0) {
+    if (this.breadcrumbHistory.length <= 1) {
       breadcrumb.style.display = 'none';
       return;
     }
@@ -241,20 +245,22 @@ class App {
 
     app.innerHTML = `
       <div class="container">
-        <header style="position: sticky; top: 0; z-index: 100; background: var(--bg-primary); padding: 6px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); width: 100%; box-sizing: border-box;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <h1 style="margin: 0; cursor: pointer; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,255,157,0.1)'" onmouseout="this.style.background='transparent'" onclick="window.app?.navigate('home')"><a href="#" onclick="return false;" style="color: inherit; text-decoration: none; font-size: 1.1rem;">⚡ <span>NosTeach</span></a></h1>
-            <nav id="breadcrumb" class="breadcrumb" style="font-size: 0.85rem; color: var(--text-muted); display: none;"></nav>
-            <div id="connection-status" class="connection-status" style="font-size: 0.75rem; display: none;">
-              <span class="status-dot"></span> <span class="status-text">Conectando...</span>
+        <header style="position: sticky; top: 0; z-index: 100; background: var(--bg-primary);">
+          <div style="padding: 6px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); width: 100%; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <h1 style="margin: 0; cursor: pointer; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,255,157,0.1)'" onmouseout="this.style.background='transparent'" onclick="window.app?.navigate('home')"><a href="#" onclick="return false;" style="color: inherit; text-decoration: none; font-size: 1.1rem;">⚡ <span>NosTeach</span></a></h1>
+              <div id="connection-status" class="connection-status" style="font-size: 0.75rem; display: none;">
+                <span class="status-dot"></span> <span class="status-text">Conectando...</span>
+              </div>
             </div>
+            <nav style="display: flex; gap: 10px; align-items: center;">
+              <button class="btn-secondary" onclick="window.app?.navigate('courses')">📚 Explorar</button>
+              <button id="nav-my-courses" class="btn-secondary" onclick="window.app?.navigate('my-courses')" style="display: none;">📊 Mis Cursos</button>
+              <button id="nav-create-course" class="btn-secondary" onclick="window.app?.navigate('create-course')" style="display: none;">✏️ Crear Curso</button>
+              <div id="user-menu-container"></div>
+            </nav>
           </div>
-          <nav style="display: flex; gap: 10px; align-items: center;">
-            <button class="btn-secondary" onclick="window.app?.navigate('courses')">📚 Explorar</button>
-            <button id="nav-my-courses" class="btn-secondary" onclick="window.app?.navigate('my-courses')" style="display: none;">📊 Mis Cursos</button>
-            <button id="nav-create-course" class="btn-secondary" onclick="window.app?.navigate('create-course')" style="display: none;">✏️ Crear Curso</button>
-            <div id="user-menu-container"></div>
-          </nav>
+          <div id="breadcrumb" class="breadcrumb" style="font-size: 0.85rem; color: var(--text-muted); padding: 6px 0; display: none; width: 100%; box-sizing: border-box; justify-content: flex-start; border-bottom: 1px solid var(--border-color);"></div>
         </header>
 
         <div id="content-area"></div>
