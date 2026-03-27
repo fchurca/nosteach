@@ -162,7 +162,7 @@ Hacer ganar al usuario en la hackathon. Construir un proyecto lo suficientemente
 
 ### 2. Al Iniciar Sesión
 
-1. Leer `AGENTS.md` y `ROADMAP.md`
+1. Leer `AGENTS.md` y `docs/ROADMAP.md`
 2. Entender el estado actual del proyecto
 3. Verificar que el servidor corra en puerto 5173
 4. Correr tests: `npm test`
@@ -215,8 +215,11 @@ nosteach/
 │   └── index.html
 ├── README.md
 ├── AGENTS.md               # Este archivo
-├── CHANGELOG.md
-├── ROADMAP.md
+├── docs/
+│   ├── CHANGELOG.md
+│   ├── ISSUES.md
+│   ├── PITCH-FOUNDATIONS.md
+│   └── ROADMAP.md
 └── package.json
 ```
 

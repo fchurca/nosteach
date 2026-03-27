@@ -165,7 +165,7 @@ Completado: auth, roles, publicar cursos, tomar evaluaciones.
 ### ⏸️ ETAPA 3: Evaluaciones Avanzadas
 ### ⏸️ ETAPA 4: Patrocinios y Recompensas
 
-Ver `ROADMAP.md` para detalle completo.
+Ver `docs/ROADMAP.md` para detalle completo.
 
 ## Convenciones
 
