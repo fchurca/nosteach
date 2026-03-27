@@ -283,7 +283,7 @@ class App {
           <p>
             <a href="https://github.com/fchurca/nosteach" target="_blank">🐱 GitHub</a> ·
             <a href="https://hackaton.lacrypta.ar" target="_blank">⚡ Lightning Hackathons 2026</a> · 
-            <a href="https://lacrypta.ar" target="_blank">🏰 La Crypta</a> · 
+            <a href="https://lacrypta.ar" target="_blank">🏯 La Crypta</a> · 
             <a href="https://nostr.com" target="_blank">🦤 Powered by Nostr</a>
           </p>
         </div>
