@@ -89,6 +89,11 @@ class App {
         return;
       }
       
+      if (hash === '#/courses' || hash === '#/c' || hash === '#/c/') {
+        this.navigate('courses');
+        return;
+      }
+      
       if (hash.startsWith('#/c/')) {
         const eventId = hash.slice(4);
         await this.viewCourse(eventId);
@@ -245,6 +250,7 @@ class App {
         this.showHome();
         break;
       case 'courses':
+        history.pushState(null, '', '/#/c');
         this.showCourseList();
         break;
       case 'my-courses':
@@ -568,7 +574,7 @@ class App {
 
     await this.waitForNostr();
 
-    if (isDirectAccess) {
+    if (!isDirectAccess) {
       history.pushState(null, '', `#/c/${eventId}`);
     }
 
