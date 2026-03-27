@@ -31,6 +31,36 @@ class UserMenu {
     this.restoreSession();
   }
 
+  hasNip07() {
+    return typeof window !== 'undefined' && window.nostr && typeof window.nostr.getPublicKey === 'function';
+  }
+
+  async handleNip07Connect() {
+    if (!this.hasNip07()) {
+      this.showLoginError('No se detectó extensión de Nostr. Instalá Alby, nos2x u otra extensión.');
+      return;
+    }
+
+    try {
+      const pubkey = await window.nostr.getPublicKey();
+      this.pubkey = pubkey;
+      this.npub = this.npub || nip19.npubEncode(pubkey);
+      this.sk = null;
+      
+      localStorage.setItem('nostr_pubkey', pubkey);
+      localStorage.setItem('nostr_npub', this.npub);
+      localStorage.setItem('nostr_method', 'nip07');
+      
+      this.closeDropdown();
+      if (this.onConnect) {
+        this.onConnect(this.pubkey, this);
+      }
+    } catch (err) {
+      console.error('NIP-07 connect error:', err);
+      this.showLoginError('Error al conectar: ' + err.message);
+    }
+  }
+
   render() {
     if (!this.container) return;
 
@@ -71,6 +101,17 @@ class UserMenu {
               <strong>Conectar con tu clave Nostr</strong>
               <button id="login-close-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;" aria-label="Cerrar">×</button>
             </div>
+            ${this.hasNip07() ? `
+              <button id="nip07-connect-header-btn" class="btn-primary" style="margin-bottom: 15px; width: 100%;">
+                ⚡ Conectar con extensión (Alby, nos2x...)
+              </button>
+              <div style="text-align: center; margin: 10px 0; color: var(--text-muted);">— o —</div>
+            ` : `
+              <button id="nip07-connect-header-btn" class="btn-secondary" style="margin-bottom: 15px; width: 100%; opacity: 0.6; cursor: not-allowed;" disabled title="Instalá una extensión como Alby o nos2x para usar NIP-07">
+                ⚡ Conectar con extensión (no detectada)
+              </button>
+              <div style="text-align: center; margin: 10px 0; color: var(--text-muted);">— o —</div>
+            `}
             <label for="nsec-input-header" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: var(--text-secondary);">Tu clave privada (nsec)</label>
             <input type="password" id="nsec-input-header" placeholder="nsec1..." style="width: 100%; margin-bottom: 8px;" aria-describedby="nsec-help">
             <small id="nsec-help" style="display: block; margin-bottom: 8px; font-size: 0.8rem; color: var(--text-muted);">Nunca se comparte - se usa solo para iniciar sesión localmente</small>
@@ -117,6 +158,11 @@ class UserMenu {
       connectHeaderBtn.addEventListener('click', () => this.handleConnect());
     }
 
+    const nip07Btn = document.getElementById('nip07-connect-header-btn');
+    if (nip07Btn && !nip07Btn.disabled) {
+      nip07Btn.addEventListener('click', () => this.handleNip07Connect());
+    }
+
     if (nsecInput) {
       nsecInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') this.handleConnect();
@@ -125,6 +171,13 @@ class UserMenu {
 
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.user-menu-container')) {
+        this.closeDropdown();
+        this.hideLogin();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
         this.closeDropdown();
         this.hideLogin();
       }

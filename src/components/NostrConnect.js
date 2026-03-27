@@ -15,8 +15,45 @@ class NostrConnect {
     this.npub = null;
     this.sk = null;
     this.profile = null;
+    this.nip07 = false;
     this.render();
     this.restoreSession();
+  }
+
+  hasNip07() {
+    return typeof window !== 'undefined' && window.nostr && typeof window.nostr.getPublicKey === 'function';
+  }
+
+  async handleNip07Connect() {
+    if (!this.hasNip07()) {
+      this.showError('No se detectó extensión de Nostr. Instalá Alby, nos2x u otra extensión.');
+      return;
+    }
+
+    try {
+      this.updateStatus('🟡 Conectando...', 'connecting');
+      
+      const pubkey = await window.nostr.getPublicKey();
+      this.pubkey = pubkey;
+      this.npub = nip19.npubEncode(pubkey);
+      this.nip07 = true;
+      this.sk = null;
+      
+      localStorage.setItem('nostr_pubkey', pubkey);
+      localStorage.setItem('nostr_npub', this.npub);
+      localStorage.setItem('nostr_method', 'nip07');
+      
+      this.updateStatus('🟢 Conectado (extensión)', 'connected');
+      this.showUserInfo();
+      await this.fetchProfile();
+      
+      if (this.onConnect) {
+        this.onConnect(this.pubkey, this);
+      }
+    } catch (err) {
+      console.error('NIP-07 connect error:', err);
+      this.showError('Error al conectar: ' + err.message);
+    }
   }
 
   render() {
@@ -46,6 +83,16 @@ class NostrConnect {
         </div>
 
         <div id="nostr-login-form">
+          ${this.hasNip07() ? `
+            <button id="nip07-connect-btn" class="btn-primary" style="margin-bottom: 15px; width: 100%;">
+              ⚡ Conectar con extensión (Alby, nos2x...)
+            </button>
+          ` : `
+            <button id="nip07-connect-btn" class="btn-secondary" style="margin-bottom: 15px; width: 100%; opacity: 0.6; cursor: not-allowed;" disabled title="Instalá una extensión como Alby o nos2x para usar NIP-07">
+              ⚡ Conectar con extensión (no detectada)
+            </button>
+          `}
+          <div style="text-align: center; margin: 10px 0; color: var(--text-muted);">— o —</div>
           <label for="nsec-input" style="display: block; margin-bottom: 4px; font-size: 0.9rem;">Tu clave privada (nsec)</label>
           <input type="password" id="nsec-input" placeholder="nsec1...">
           <button id="nsec-connect-btn">Conectar con nsec</button>
@@ -58,6 +105,11 @@ class NostrConnect {
     const nsecBtn = document.getElementById('nsec-connect-btn');
     if (nsecBtn) {
       nsecBtn.addEventListener('click', () => this.handleNsecConnect());
+    }
+
+    const nip07Btn = document.getElementById('nip07-connect-btn');
+    if (nip07Btn) {
+      nip07Btn.addEventListener('click', () => this.handleNip07Connect());
     }
 
     const nsecInput = document.getElementById('nsec-input');
@@ -77,8 +129,31 @@ class NostrConnect {
     const savedSk = localStorage.getItem('nostr_sk');
     const savedPubkey = localStorage.getItem('nostr_pubkey');
     const savedNpub = localStorage.getItem('nostr_npub');
+    const savedMethod = localStorage.getItem('nostr_method');
     
-    if (savedSk && savedPubkey) {
+    if (savedMethod === 'nip07' && savedPubkey) {
+      if (!this.hasNip07()) {
+        this.clearSession();
+        return;
+      }
+      try {
+        this.pubkey = savedPubkey;
+        this.npub = savedNpub || nip19.npubEncode(savedPubkey);
+        this.nip07 = true;
+        
+        this.updateStatus('🟡 Sesión restaurada (extensión)', 'connected');
+        this.showUserInfo();
+        
+        await this.fetchProfile();
+        
+        if (this.onConnect) {
+          this.onConnect(this.pubkey, this);
+        }
+      } catch (err) {
+        console.error('Error restoring NIP-07 session:', err);
+        this.clearSession();
+      }
+    } else if (savedSk && savedPubkey) {
       try {
         this.sk = new Uint8Array(savedSk.split(',').map(Number));
         this.pubkey = savedPubkey;
@@ -103,6 +178,8 @@ class NostrConnect {
     localStorage.removeItem('nostr_sk');
     localStorage.removeItem('nostr_pubkey');
     localStorage.removeItem('nostr_npub');
+    localStorage.removeItem('nostr_method');
+    this.nip07 = false;
   }
 
   async handleNsecConnect() {
@@ -284,7 +361,7 @@ class NostrConnect {
   }
 
   async publish(kind, content, tags = []) {
-    if (!this.sk || !this.pubkey) {
+    if (!this.pubkey) {
       throw new Error('No conectado a Nostr');
     }
 
@@ -296,7 +373,15 @@ class NostrConnect {
       content: typeof content === 'object' ? JSON.stringify(content) : content
     };
 
-    const signed = finalizeEvent(event, this.sk);
+    let signed;
+    if (this.nip07 && window.nostr && window.nostr.signEvent) {
+      signed = await window.nostr.signEvent(event);
+    } else {
+      if (!this.sk) {
+        throw new Error('No conectado a Nostr');
+      }
+      signed = finalizeEvent(event, this.sk);
+    }
     
     const results = [];
     for (const relay of RELAYS) {
