@@ -17,6 +17,7 @@ class App {
     this.roleSelector = null;
     this.userMenu = null;
     this.currentView = 'home';
+    this.breadcrumbHistory = [];
     this.initNostrReadOnly();
     this.init();
   }
@@ -85,6 +86,8 @@ class App {
       
       if (isHome) {
         history.pushState(null, '', '/');
+        this.breadcrumbHistory = [];
+        this.renderBreadcrumb();
         this.showHome();
         return;
       }
@@ -96,13 +99,21 @@ class App {
       
       if (hash.startsWith('#/c/')) {
         const eventId = hash.slice(4);
+        this.breadcrumbHistory = [
+          { label: 'Cursos', onclickCode: 'window.app?.navigate(\'courses\')' }
+        ];
+        this.renderBreadcrumb();
         await this.viewCourse(eventId);
       } else if (hash.startsWith('#/p/')) {
         const npub = hash.slice(4);
         try {
           const decoded = nip19.decode(npub);
           if (decoded && decoded.type === 'npub') {
-            this.navigate({ view: 'profile', pubkey: decoded.data });
+            this.breadcrumbHistory = [
+              { label: 'Cursos', onclickCode: 'window.app?.navigate(\'courses\')' }
+            ];
+            this.renderBreadcrumb();
+            await this.viewTeacherProfile(decoded.data);
           }
         } catch (err) {
           console.warn('Invalid npub in hash:', err.message);
@@ -114,22 +125,42 @@ class App {
     handleHash();
   }
 
-  setBreadcrumb(items = []) {
+  pushBreadcrumb(label, onclickCode) {
+    this.breadcrumbHistory.push({ label, onclickCode });
+    this.renderBreadcrumb();
+  }
+
+  popBreadcrumbTo(index) {
+    this.breadcrumbHistory = this.breadcrumbHistory.slice(0, index + 1);
+    this.renderBreadcrumb();
+  }
+
+  renderBreadcrumb() {
     const breadcrumb = document.getElementById('breadcrumb');
     if (!breadcrumb) return;
-    
-    if (items.length === 0) {
+
+    if (this.breadcrumbHistory.length === 0) {
       breadcrumb.style.display = 'none';
       return;
     }
-    
+
     breadcrumb.style.display = 'flex';
-    breadcrumb.innerHTML = items.map((item, i) => {
-      if (i === items.length - 1) {
+    breadcrumb.innerHTML = this.breadcrumbHistory.map((item, i) => {
+      const isLast = i === this.breadcrumbHistory.length - 1;
+      if (isLast) {
         return `<span>${item.label}</span>`;
       }
-      return `<a href="#" onclick="event.preventDefault(); ${item.onclick || 'window.app?.navigate(\'' + item.view + '\')'}" style="color: var(--accent);">${item.label}</a><span style="margin: 0 8px;">›</span>`;
+      return `<span class="breadcrumb-item" data-index="${i}" style="cursor: pointer; color: var(--accent);" onclick="event.preventDefault(); window.app?.popBreadcrumbTo(${i});">${item.label}</span><span style="margin: 0 8px;">›</span>`;
     }).join('');
+
+    // Ocultar primeros si hay más de 5
+    if (this.breadcrumbHistory.length > 5) {
+      const items = breadcrumb.querySelectorAll('.breadcrumb-item, span[style*="margin: 0 8px"]');
+      const toHide = this.breadcrumbHistory.length - 5;
+      for (let i = 0; i < toHide * 2; i++) {
+        if (items[i]) items[i].style.display = 'none';
+      }
+    }
   }
 
   checkStoredSession() {
@@ -266,12 +297,14 @@ class App {
     switch (view) {
       case 'home':
         history.pushState(null, '', '/');
-        this.setBreadcrumb([]);
+        this.breadcrumbHistory = [];
+        this.renderBreadcrumb();
         this.showHome();
         break;
       case 'courses':
         history.pushState(null, '', '/#/c');
-        this.setBreadcrumb([]);
+        this.breadcrumbHistory = [{ label: 'Cursos', onclickCode: 'window.app?.navigate(\'courses\')' }];
+        this.renderBreadcrumb();
         this.showCourseList();
         break;
       case 'my-courses':
@@ -568,7 +601,7 @@ class App {
               </a>
             </h3>
             <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 10px;">
-              <a href="#" onclick="event.preventDefault(); window.app?.viewTeacherProfile('${event.pubkey}', '${content.titulo || ''}', '${event.id}');" class="teacher-link">${displayName}</a>
+              <a href="#" onclick="event.preventDefault(); window.app?.viewTeacherProfile('${event.pubkey}');" class="teacher-link">${displayName}</a>
             </div>
             <p style="color: rgba(255,255,255,0.7); margin-bottom: 10px;">${content.descripcion || ''}</p>
             <div style="display: flex; gap: 15px; font-size: 0.9rem;">
@@ -616,10 +649,7 @@ class App {
       const courseContent = typeof course.content === 'string' ? JSON.parse(course.content) : course.content;
       const courseTitle = courseContent.titulo || 'Sin título';
       
-      this.setBreadcrumb([
-        { label: 'Cursos', view: 'courses' },
-        { label: courseTitle, view: 'courses', onclick: `window.app?.viewCourse('${eventId}', true)` }
-      ]);
+      this.pushBreadcrumb(courseTitle, `window.app?.viewCourse('${eventId}', true)`);
       
       new CourseView(contentArea, course, this.nostr, this.roles, () => {
         this.navigate('courses');
@@ -629,7 +659,7 @@ class App {
     }
   }
 
-  async viewTeacherProfile(pubkey, breadcrumb = null, breadcrumbEventId = null) {
+  async viewTeacherProfile(pubkey) {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
 
@@ -659,16 +689,7 @@ class App {
       this.currentTeacherProfile = teacherProfile;
 
       const teacherName = teacherProfile.profile?.display_name || teacherProfile.profile?.name || pubkey.slice(0, 8);
-      const breadcrumbItems = [
-        { label: 'Cursos', view: 'courses' }
-      ];
-      
-      if (breadcrumb && breadcrumbEventId) {
-        breadcrumbItems.push({ label: breadcrumb, view: 'courses', onclick: `window.app?.viewCourse('${breadcrumbEventId}', true)` });
-      }
-      
-      breadcrumbItems.push({ label: teacherName, view: 'courses' });
-      this.setBreadcrumb(breadcrumbItems);
+      this.pushBreadcrumb(teacherName, `window.app?.viewTeacherProfile('${pubkey}')`);
     } catch (err) {
       contentArea.innerHTML = `<div class="card"><h2>❌ Error: ${err.message}</h2></div>`;
     }
@@ -796,11 +817,7 @@ class App {
       const courseContent = typeof course.content === 'string' ? JSON.parse(course.content) : course.content;
       const courseTitle = courseContent.titulo || 'Curso';
 
-      this.setBreadcrumb([
-        { label: 'Cursos', view: 'courses' },
-        { label: courseTitle, view: 'courses', onclick: `window.app?.viewCourse('${courseId}', true)` },
-        { label: 'Evaluaciones', view: 'responses' }
-      ]);
+      this.pushBreadcrumb('Evaluaciones', `window.app?.navigateToResponses('${courseId}')`);
 
       new EvaluationList(contentArea, courseId, course, this.nostr, () => {
         this.navigate('my-courses');

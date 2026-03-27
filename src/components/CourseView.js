@@ -204,7 +204,7 @@ class CourseView {
         e.preventDefault();
         if (window.app) {
           const content = typeof this.course.content === 'string' ? JSON.parse(this.course.content) : this.course.content;
-          window.app.viewTeacherProfile(this.course.pubkey, content.titulo, this.course.id);
+          window.app.viewTeacherProfile(this.course.pubkey);
         }
       });
     }
