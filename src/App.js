@@ -114,6 +114,24 @@ class App {
     handleHash();
   }
 
+  setBreadcrumb(items = []) {
+    const breadcrumb = document.getElementById('breadcrumb');
+    if (!breadcrumb) return;
+    
+    if (items.length === 0) {
+      breadcrumb.style.display = 'none';
+      return;
+    }
+    
+    breadcrumb.style.display = 'flex';
+    breadcrumb.innerHTML = items.map((item, i) => {
+      if (i === items.length - 1) {
+        return `<span>${item.label}</span>`;
+      }
+      return `<a href="#" onclick="event.preventDefault(); ${item.onclick || 'window.app?.navigate(\'' + item.view + '\')'}" style="color: var(--accent);">${item.label}</a><span style="margin: 0 8px;">›</span>`;
+    }).join('');
+  }
+
   checkStoredSession() {
     const storedPubkey = localStorage.getItem('nostr_pubkey');
     const storedNpub = localStorage.getItem('nostr_npub');
@@ -195,6 +213,7 @@ class App {
         <header style="position: sticky; top: 0; z-index: 100; background: var(--bg-primary); padding: 6px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); width: 100%; box-sizing: border-box;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <h1 style="margin: 0; cursor: pointer; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,255,157,0.1)'" onmouseout="this.style.background='transparent'" onclick="window.app?.navigate('home')"><a href="#" onclick="return false;" style="color: inherit; text-decoration: none; font-size: 1.1rem;">⚡ <span>NosTeach</span></a></h1>
+            <nav id="breadcrumb" class="breadcrumb" style="font-size: 0.85rem; color: var(--text-muted); display: none;"></nav>
             <div id="connection-status" class="connection-status" style="font-size: 0.75rem; display: none;">
               <span class="status-dot"></span> <span class="status-text">Conectando...</span>
             </div>
@@ -247,10 +266,12 @@ class App {
     switch (view) {
       case 'home':
         history.pushState(null, '', '/');
+        this.setBreadcrumb([]);
         this.showHome();
         break;
       case 'courses':
         history.pushState(null, '', '/#/c');
+        this.setBreadcrumb([]);
         this.showCourseList();
         break;
       case 'my-courses':
@@ -547,7 +568,7 @@ class App {
               </a>
             </h3>
             <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 10px;">
-              <a href="#" onclick="event.preventDefault(); window.app?.viewTeacherProfile('${event.pubkey}');" class="teacher-link">${displayName}</a>
+              <a href="#" onclick="event.preventDefault(); window.app?.viewTeacherProfile('${event.pubkey}', '${content.titulo || ''}', '${event.id}');" class="teacher-link">${displayName}</a>
             </div>
             <p style="color: rgba(255,255,255,0.7); margin-bottom: 10px;">${content.descripcion || ''}</p>
             <div style="display: flex; gap: 15px; font-size: 0.9rem;">
@@ -592,6 +613,14 @@ class App {
       }
 
       const course = events[0];
+      const courseContent = typeof course.content === 'string' ? JSON.parse(course.content) : course.content;
+      const courseTitle = courseContent.titulo || 'Sin título';
+      
+      this.setBreadcrumb([
+        { label: 'Cursos', view: 'courses' },
+        { label: courseTitle, view: 'courses', onclick: `window.app?.viewCourse('${eventId}', true)` }
+      ]);
+      
       new CourseView(contentArea, course, this.nostr, this.roles, () => {
         this.navigate('courses');
       }, isDirectAccess);
@@ -600,7 +629,7 @@ class App {
     }
   }
 
-  async viewTeacherProfile(pubkey) {
+  async viewTeacherProfile(pubkey, breadcrumb = null, breadcrumbEventId = null) {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
 
@@ -628,6 +657,18 @@ class App {
       await teacherProfile.load();
       teacherProfile.render();
       this.currentTeacherProfile = teacherProfile;
+
+      const teacherName = teacherProfile.profile?.display_name || teacherProfile.profile?.name || pubkey.slice(0, 8);
+      const breadcrumbItems = [
+        { label: 'Cursos', view: 'courses' }
+      ];
+      
+      if (breadcrumb && breadcrumbEventId) {
+        breadcrumbItems.push({ label: breadcrumb, view: 'courses', onclick: `window.app?.viewCourse('${breadcrumbEventId}', true)` });
+      }
+      
+      breadcrumbItems.push({ label: teacherName, view: 'courses' });
+      this.setBreadcrumb(breadcrumbItems);
     } catch (err) {
       contentArea.innerHTML = `<div class="card"><h2>❌ Error: ${err.message}</h2></div>`;
     }
@@ -752,6 +793,15 @@ class App {
       }
 
       const course = events[0];
+      const courseContent = typeof course.content === 'string' ? JSON.parse(course.content) : course.content;
+      const courseTitle = courseContent.titulo || 'Curso';
+
+      this.setBreadcrumb([
+        { label: 'Cursos', view: 'courses' },
+        { label: courseTitle, view: 'courses', onclick: `window.app?.viewCourse('${courseId}', true)` },
+        { label: 'Evaluaciones', view: 'responses' }
+      ]);
+
       new EvaluationList(contentArea, courseId, course, this.nostr, () => {
         this.navigate('my-courses');
       });

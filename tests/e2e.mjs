@@ -56,7 +56,7 @@ async function runTests() {
 
     // Test 3: Navigation visible
     await test('Navigation visible', async () => {
-      const nav = await page.locator('nav');
+      const nav = await page.locator('nav').filter({ hasText: 'Explorar' });
       await nav.waitFor({ state: 'visible' });
     });
 

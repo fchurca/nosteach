@@ -51,18 +51,6 @@ class TeacherProfile {
 
     this.container.innerHTML = `
       <div class="card">
-        <nav class="breadcrumb" style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted);">
-          <a href="#" onclick="window.app?.navigate('home'); return false;" style="color: var(--accent);">Inicio</a>
-          <span style="margin: 0 8px;">›</span>
-          <a href="#" onclick="window.app?.navigate('courses'); return false;" style="color: var(--accent);">Cursos</a>
-          <span style="margin: 0 8px;">›</span>
-          <span>${displayName}</span>
-        </nav>
-
-        <button onclick="window.app?.navigate('courses')" class="btn-secondary" style="margin-bottom: 15px;">
-          ← Volver a Cursos
-        </button>
-
         <div class="teacher-profile-header">
           <h2>👤 ${displayName}</h2>
           ${lud16 ? `
