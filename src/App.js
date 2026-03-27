@@ -104,20 +104,33 @@ class App {
         ];
         this.renderBreadcrumb();
         await this.viewCourse(eventId);
+      } else if (hash === '#/p' || hash === '#/p/') {
+        if (this.pubkey) {
+          this.navigate('account');
+        } else {
+          history.pushState(null, '', '/');
+          this.navigate('home');
+        }
       } else if (hash.startsWith('#/p/')) {
         const npub = hash.slice(4);
         try {
           const decoded = nip19.decode(npub);
           if (decoded && decoded.type === 'npub') {
-            this.breadcrumbHistory = [
-              { label: 'Cursos', onclickCode: 'window.app?.navigate(\'courses\')' }
-            ];
+            this.breadcrumbHistory = [];
             this.renderBreadcrumb();
             await this.viewTeacherProfile(decoded.data);
           }
         } catch (err) {
           console.warn('Invalid npub in hash:', err.message);
         }
+      } else if (hash.startsWith('#/c/') && hash.includes('/r')) {
+        const parts = hash.slice(4).split('/');
+        const courseId = parts[0];
+        this.breadcrumbHistory = [
+          { label: 'Cursos', onclickCode: 'window.app?.navigate(\'courses\')' }
+        ];
+        this.renderBreadcrumb();
+        await this.navigateToResponses(courseId);
       }
     };
 
@@ -332,6 +345,9 @@ class App {
         }
         break;
       case 'account':
+        history.pushState(null, '', '/#/p');
+        this.breadcrumbHistory = [];
+        this.renderBreadcrumb();
         this.showAccount();
         break;
       case 'roles':
@@ -451,6 +467,7 @@ class App {
           <div style="margin-bottom: 10px;">
             <strong>npub:</strong> 
             <code style="font-size: 0.85em;">${npub.slice(0, 20)}...</code>
+            <a href="#/p/${npub}" style="margin-left: 10px; color: var(--accent);">🔗 Ver mi perfil público</a>
           </div>
           <div style="margin-bottom: 10px;">
             <strong>Roles activos:</strong>
@@ -634,9 +651,7 @@ class App {
 
     await this.waitForNostr();
 
-    if (!isDirectAccess) {
-      history.pushState(null, '', `#/c/${eventId}`);
-    }
+    history.pushState(null, '', `#/c/${eventId}`);
 
     contentArea.innerHTML = '<div class="card"><div class="skeleton skeleton-box"></div><div class="skeleton skeleton-text"></div></div>';
 
@@ -668,6 +683,9 @@ class App {
   async viewTeacherProfile(pubkey) {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
+
+    const npub = nip19.npubEncode(pubkey);
+    history.pushState(null, '', `/#/p/${npub}`);
 
     if (!this.nostr) {
       contentArea.innerHTML = `
@@ -805,6 +823,8 @@ class App {
   async navigateToResponses(courseId) {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
+
+    history.pushState(null, '', `/#/c/${courseId}/r`);
 
     contentArea.innerHTML = '<div class="card"><div class="skeleton skeleton-box"></div><div class="skeleton skeleton-text"></div></div>';
 
