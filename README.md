@@ -1,6 +1,33 @@
 # ⚡ NosTeach
 
-Plataforma educativa descentralizada construida sobre Nostr.
+Plataforma educativa descentralizada construida sobre Nostr para La Crypta Lightning Hackathon 2026.
+
+## Demo
+
+Probá la versión live: https://nosteach.vercel.app/
+
+## Stack Técnico
+
+| Capa | Tecnología |
+|------|------------|
+| Frontend | Vite + Vanilla JS |
+| Nostr | nostr-tools (WebSocket directo) |
+| Pagos | @getalby/sdk (NWC), webln |
+| Storage | Relays Nostr (NIP-78) |
+| Tests | Playwright |
+
+## Navegación
+
+| URL | Vista |
+|-----|-------|
+| #/ | Home |
+| #/c | Lista de cursos |
+| #/c/{id} | Detalle de curso |
+| #/c/{id}/r | Respuestas (evaluaciones) |
+| #/p | Mi Cuenta |
+| #/p/{npub} | Perfil público de usuario |
+
+---
 
 ## Concepto
 
@@ -10,16 +37,6 @@ NosTeach permite:
 - **Patrocinadores** apoyar con zaps Lightning
 
 Todo vive en relays Nostr públicos. Sin suscripciones, sin censores.
-
-## Hackathon
-
-Participando en **FOUNDATIONS** - La Crypta Lightning Hackathons 2026.
-- **Premio**: 1,000,000 sats
-- **Info**: https://hackaton.lacrypta.ar
-
-## Demo
-
-Probá la versión live: https://nosteach.vercel.app/
 
 ## Inicio Rápido
 
@@ -56,16 +73,6 @@ Abrir http://localhost:5173
 - Agregar módulos (texto o enlaces)
 - Agregar preguntas de evaluación
 - Ver cursos publicados por otros
-
-## Stack Técnico
-
-| Capa | Tecnología |
-|------|------------|
-| Frontend | Vite + Vanilla JS |
-| Nostr | nostr-tools (WebSocket directo) |
-| Pagos | @getalby/sdk (NWC), webln |
-| Storage | Relays Nostr (NIP-78) |
-| Tests | Playwright |
 
 ## Testing
 
@@ -169,10 +176,6 @@ Ver `docs/ROADMAP.md` para detalle completo.
 
 ## Convenciones
 
-### URLs de Perfil
-- Perfiles públicos: `#/p/{npub1...}`
-- Ejemplo: `http://localhost:5173/#/p/npub1sn0wdenkukak0d9dfczzeacvhkrgz92ak56egt7vdgzn8pv2wfqqhrjdv9`
-
 ### Display de Nombres
 - Con nombre: `nombre (abcd...4321)` (4 caracteres del pubkey al inicio y final)
 - Sin nombre: `npub (abcd...4321)`
@@ -195,6 +198,11 @@ Ver `docs/ROADMAP.md` para detalle completo.
 - [NIP-78: App-specific Data](https://github.com/nostr-protocol/nips/blob/master/78.md)
 - [Lightning Network](https://lightning.network/)
 - [Alby Developer](https://guides.getalby.com/developer-guide)
+
+## Hackathon
+
+- **Premio**: 1,000,000 sats
+- **Info**: https://hackaton.lacrypta.ar
 
 ---
 
