@@ -77,7 +77,7 @@ Cuando el usuario navega a un curso desde la lista, no hay manera de saber desde
 
 ---
 
-### ❌ 5. Timeout de sesión no manejado (REMOVIDO a pedido del usuario)
+### ⏸️ 5. Timeout de sesión no manejado (DIFERIDO)
 **Ubicación**: `src/components/UserMenu.js`
 
 No hay expiración de sesión ni renovación de tokens. El usuario puede quedar "atrapado" en sesión indefinidamente.
@@ -92,15 +92,6 @@ No hay expiración de sesión ni renovación de tokens. El usuario puede quedar 
 Cuando los relays están caídos o no responden, el usuario no tiene feedback de qué está pasando.
 
 **Solución**: Agregado sistema de estado de conexión en nostr.js con callback. Agregado indicador visual en header de App.js.
-
----
-
-### ✅ 7. URLs profundas (accesibles desde bookmarks)
-**Ubicación**: `src/App.js`
-
-El usuario no puede acceder directamente a cursos o docentes via URL (ej: `#/c/{eventId}`).
-
-**Solución**: Agregada ruta `#/c/{eventId}` en initHashRouting. CourseView ahora recibe `isDirectAccess` para no mostrar breadcrumb si viene de URL directa (bookmark). Breadcrumbs solo aparecen cuando navega internamente.
 
 ---
 
