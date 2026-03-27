@@ -117,6 +117,43 @@ Agregar ruta `#/p/{npub}` que muestre vista de usuario con sus cursos publicados
 
 ---
 
+### 🆕 9. Auth NIP-07 (Login con extensión de navegador)
+**Ubicación**: `src/components/NostrConnect.js`
+
+El login actual solo acepta nsec, inutilizable para usuarios no-técnicos.
+
+**Solución**:
+1. Detectar si existe `window.nostr` al cargar
+2. Agregar botón "Conectar con extensión"
+3. Usar `window.nostr.getPublicKey()` y `signEvent()`
+
+---
+
+### 🆕 10. Auth NIP-46 Básico (Connection Request)
+**Ubicación**: `src/components/NostrConnect.js`
+
+Login via QR/bunker como alternativa a NIP-07.
+
+**Solución**:
+1. Generar connection token y publish a relay (kind:24133)
+2. Mostrar QR con URI de conexión
+3. Escuchar respuesta del bunker
+4. Obtener pubkey approveada
+
+---
+
+### 🆕 11. Auth NIP-46 Completo (Remote Signing)
+**Ubicación**: `src/components/NostrConnect.js`
+
+Firma de eventos delegateada al bunker remoto.
+
+**Solución**:
+1. Establecer comunicación persistente con bunker
+2. Implementar `signEvent()` delegando al bunker
+3. Manejar reconnect, timeouts, errores
+
+---
+
 ## ✅ Completados Recientemente
 
 - Sistema de breadcrumbs dinámicos con historial de navegación
