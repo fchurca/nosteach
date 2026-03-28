@@ -1,31 +1,11 @@
-import { nip19 } from 'nostr-tools';
-import { getPublicKey, finalizeEvent } from 'nostr-tools/pure';
-import { DEBUG } from '../lib/constants.js';
-
-const RELAYS = [
-  'wss://nos.lol',
-  'wss://relay.damus.io',
-  'wss://purplepag.es',
-  'wss://filter.nostr.wine',
-  'wss://relay.snort.social',
-  'wss://inbox.nostr.wine'
-];
-
-const SESSION_KEYS = {
-  sk: 'nostr_sk',
-  pubkey: 'nostr_pubkey',
-  npub: 'nostr_npub'
-};
+import NostrConnect from '../lib/NostrConnect.js';
 
 class UserMenu {
   constructor(container, onConnect, onDisconnect) {
     this.container = container;
     this.onConnect = onConnect;
     this.onDisconnect = onDisconnect;
-    this.pubkey = null;
-    this.npub = null;
-    this.sk = null;
-    this.profile = null;
+    this.nostr = new NostrConnect();
     this.isOpen = false;
     this._nip07HandlerAttached = false;
     this.render();
@@ -33,16 +13,12 @@ class UserMenu {
     this.restoreSession();
   }
 
-  hasNip07() {
-    return typeof window !== 'undefined' && window.nostr && typeof window.nostr.getPublicKey === 'function';
-  }
-
   checkNip07Extension() {
     const check = () => {
       const btn = document.getElementById('nip07-connect-header-btn');
       if (!btn) return;
       
-      if (this.hasNip07()) {
+      if (this.nostr.hasNip07()) {
         btn.disabled = false;
         btn.classList.remove('btn-secondary');
         btn.classList.add('btn-primary');
@@ -64,30 +40,16 @@ class UserMenu {
   }
 
   async handleNip07Connect() {
-    if (!this.hasNip07()) {
-      this.showLoginError('No se detectó extensión de Nostr. Instalá Alby, nos2x u otra extensión.');
-      return;
-    }
-
     try {
-      const pubkey = await window.nostr.getPublicKey();
-      this.pubkey = pubkey;
-      
-      this.npub = this.npub || nip19.npubEncode(pubkey);
-      this.sk = null;
-      
-      localStorage.setItem('nostr_pubkey', pubkey);
-      localStorage.setItem('nostr_npub', this.npub);
-      localStorage.setItem('nostr_method', 'nip07');
-      
+      await this.nostr.connectNip07();
       this.showUserLoggedIn();
       this.closeDropdown();
       if (this.onConnect) {
-        this.onConnect(this.pubkey, this);
+        this.onConnect(this.nostr.pubkey, this.nostr);
       }
     } catch (err) {
       console.error('NIP-07 connect error:', err);
-      this.showLoginError('Error al conectar: ' + err.message);
+      this.showLoginError(err.message);
     }
   }
 
@@ -131,7 +93,7 @@ class UserMenu {
               <strong>Conectar con tu clave Nostr</strong>
               <button id="login-close-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;" aria-label="Cerrar">×</button>
             </div>
-            ${this.hasNip07() ? `
+            ${this.nostr.hasNip07() ? `
               <button id="nip07-connect-header-btn" class="btn-primary" style="margin-bottom: 15px; width: 100%;">
                 ⚡ Conectar con extensión (Alby, nos2x...)
               </button>
@@ -158,7 +120,6 @@ class UserMenu {
   attachListeners() {
     const userBtn = document.getElementById('user-menu-btn');
     const connectBtn = document.getElementById('user-menu-connect');
-    const loginPanel = document.getElementById('user-menu-login');
     const closeBtn = document.getElementById('login-close-btn');
     const connectHeaderBtn = document.getElementById('nsec-connect-header-btn');
     const nsecInput = document.getElementById('nsec-input-header');
@@ -254,30 +215,21 @@ class UserMenu {
       return;
     }
 
-    if (!nsec.startsWith('nsec')) {
-      this.showLoginError('La nsec debe empezar con "nsec1"');
-      return;
-    }
-
     try {
-      const decoded = nip19.decode(nsec);
-      this.sk = decoded.data;
-      this.pubkey = getPublicKey(this.sk);
-      this.npub = nip19.npubEncode(this.pubkey);
-
-      localStorage.setItem(SESSION_KEYS.sk, Array.from(this.sk).join(','));
-      localStorage.setItem(SESSION_KEYS.pubkey, this.pubkey);
-      localStorage.setItem(SESSION_KEYS.npub, this.npub);
-
+      await this.nostr.connectNsec(nsec);
       this.hideLogin();
       this.showUserLoggedIn();
       
       if (this.onConnect) {
-        this.onConnect(this.pubkey, this);
+        this.onConnect(this.nostr.pubkey, this.nostr);
       }
       
-      this.fetchProfile();
-
+      this.nostr.fetchProfile().then(profile => {
+        this.updateProfileDisplay();
+        if (window.app?.refreshAccount) {
+          window.app.refreshAccount();
+        }
+      });
     } catch (err) {
       console.error('Connection error:', err);
       this.showLoginError(err.message);
@@ -302,102 +254,28 @@ class UserMenu {
     if (userBtn) userBtn.style.display = 'flex';
     if (connectBtn) connectBtn.style.display = 'none';
     
-    const displayName = this.profile?.display_name || this.profile?.name;
-    const shortNpub = this.npub ? `${this.npub.slice(0, 8)}...${this.npub.slice(-8)}` : '';
+    const displayName = this.nostr.profile?.display_name || this.nostr.profile?.name;
+    const shortNpub = this.nostr.npub ? `${this.nostr.npub.slice(0, 8)}...${this.nostr.npub.slice(-8)}` : '';
     
     if (npubEl) npubEl.textContent = shortNpub;
-    
-    // Dropdown name
-    if (nameEl) {
-      nameEl.textContent = displayName || '(cargando nombre...)';
-    }
-    // Button name
-    if (nameBtnEl) {
-      nameBtnEl.textContent = displayName || '(cargando nombre...)';
-    }
+    if (nameEl) nameEl.textContent = displayName || '(cargando nombre...)';
+    if (nameBtnEl) nameBtnEl.textContent = displayName || '(cargando nombre...)';
   }
 
   async restoreSession() {
-    const savedSk = localStorage.getItem(SESSION_KEYS.sk);
-    const savedPubkey = localStorage.getItem(SESSION_KEYS.pubkey);
-    const savedNpub = localStorage.getItem(SESSION_KEYS.npub);
-    const savedMethod = localStorage.getItem('nostr_method');
+    const result = await this.nostr.restoreSession();
     
-    if (savedMethod === 'nip07' && savedPubkey) {
-      if (!this.hasNip07()) {
-        this.clearSession();
-        return;
+    if (result) {
+      this.showUserLoggedIn();
+      if (this.onConnect) {
+        this.onConnect(this.nostr.pubkey, this.nostr);
       }
-      try {
-        const currentPubkey = await window.nostr.getPublicKey();
-        
-        if (savedPubkey && savedPubkey !== currentPubkey) {
-          this.clearSession();
-          return;
+      this.nostr.fetchProfile().then(profile => {
+        this.updateProfileDisplay();
+        if (window.app?.refreshAccount) {
+          window.app.refreshAccount();
         }
-        
-        this.pubkey = currentPubkey;
-        this.npub = nip19.npubEncode(currentPubkey);
-        
-        localStorage.setItem(SESSION_KEYS.pubkey, currentPubkey);
-        localStorage.setItem(SESSION_KEYS.npub, this.npub);
-        
-        this.showUserLoggedIn();
-        
-        if (this.onConnect) {
-          this.onConnect(this.pubkey, this);
-        }
-      } catch (err) {
-        console.error('Error restoring NIP-07 session:', err);
-        this.clearSession();
-      }
-    } else if (savedSk && savedPubkey) {
-      try {
-        this.sk = new Uint8Array(savedSk.split(',').map(Number));
-        this.pubkey = savedPubkey;
-        this.npub = savedNpub || nip19.npubEncode(savedPubkey);
-        
-        this.showUserLoggedIn();
-        await this.fetchProfile();
-        
-        if (this.onConnect) {
-          this.onConnect(this.pubkey, this);
-        }
-      } catch (err) {
-        console.error('Error restoring session:', err);
-        this.clearSession();
-      }
-    }
-  }
-
-  async fetchProfile() {
-    if (!this.pubkey) return;
-    
-    if (DEBUG) console.log('Fetching profile from relays...');
-    
-    try {
-      const events = await this.query({
-        kinds: [0],
-        authors: [this.pubkey],
-        limit: 1
       });
-
-      if (events.length > 0) {
-        const content = JSON.parse(events[0].content);
-        this.profile = content;
-        if (DEBUG) console.log('Profile fetched:', this.profile?.name || this.profile?.display_name);
-      } else {
-        if (DEBUG) console.log('No profile found on relays');
-      }
-    } catch (err) {
-      console.warn('No se pudo obtener perfil:', err.message);
-    }
-    
-    this.updateProfileDisplay();
-    
-    // Notify App to refresh account view
-    if (window.app?.refreshAccount) {
-      window.app.refreshAccount();
     }
   }
 
@@ -406,25 +284,15 @@ class UserMenu {
     const npubEl = document.getElementById('user-menu-npub');
     const nameBtnEl = document.getElementById('user-menu-name');
     
-    const displayName = this.profile?.display_name || this.profile?.name;
+    const displayName = this.nostr.profile?.display_name || this.nostr.profile?.name;
     
-    if (nameEl) {
-      nameEl.textContent = displayName || '(cargando nombre...)';
-    }
-    if (npubEl) {
-      npubEl.textContent = this.npub ? `${this.npub.slice(0, 12)}...${this.npub.slice(-8)}` : '';
-    }
-    if (nameBtnEl) {
-      nameBtnEl.textContent = displayName || 'Usuario';
-    }
+    if (nameEl) nameEl.textContent = displayName || '(cargando nombre...)';
+    if (npubEl) npubEl.textContent = this.nostr.npub ? `${this.nostr.npub.slice(0, 12)}...${this.nostr.npub.slice(-8)}` : '';
+    if (nameBtnEl) nameBtnEl.textContent = displayName || 'Usuario';
   }
 
   disconnect() {
-    this.pubkey = null;
-    this.npub = null;
-    this.sk = null;
-    this.profile = null;
-    this.clearSession();
+    this.nostr.disconnect();
     this.closeDropdown();
     this.showLoggedOut();
     
@@ -439,150 +307,6 @@ class UserMenu {
 
     if (userBtn) userBtn.style.display = 'none';
     if (connectBtn) connectBtn.style.display = 'inline-block';
-  }
-
-  clearSession() {
-    localStorage.removeItem(SESSION_KEYS.sk);
-    localStorage.removeItem(SESSION_KEYS.pubkey);
-    localStorage.removeItem(SESSION_KEYS.npub);
-  }
-
-  async query(filters) {
-    // Query all relays in PARALLEL for faster results
-    const promises = RELAYS.map(relay => 
-      this.relayQuery(relay, filters).then(events => ({ relay, events }))
-    );
-    
-    const resultsArrays = await Promise.all(promises);
-    
-    // Log results per relay
-    for (const { relay, events } of resultsArrays) {
-      if (events.length > 0) {
-        if (DEBUG) console.log(`${relay}: ${events.length} events`);
-      }
-    }
-    
-    // Merge results, deduplicate by id
-    const results = [];
-    const seen = new Set();
-    for (const { events } of resultsArrays) {
-      for (const event of events) {
-        if (!seen.has(event.id)) {
-          seen.add(event.id);
-          results.push(event);
-        }
-      }
-    }
-    
-    if (DEBUG) console.log(`Total: ${results.length} events from ${RELAYS.length} relays`);
-    return results;
-  }
-
-  relayQuery(relay, filters) {
-    return new Promise((resolve) => {
-      const ws = new WebSocket(relay);
-      const results = [];
-      const subscriptionId = Math.random().toString(36).substring(2, 10);
-      
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data[0] === 'EVENT' && data[1] === subscriptionId) {
-            results.push(data[2]);
-          } else if (data[0] === 'EOSE') {
-            ws.send(JSON.stringify(['CLOSE', subscriptionId]));
-            ws.close();
-            resolve(results);
-          }
-        } catch (e) {
-          // Ignore parse errors
-        }
-      };
-
-      ws.onopen = () => {
-        ws.send(JSON.stringify(['REQ', subscriptionId, filters]));
-      };
-
-      ws.onerror = () => {
-        resolve(results);
-      };
-
-      ws.onclose = () => {
-        resolve(results);
-      };
-
-      // Timeout
-      setTimeout(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify(['CLOSE', subscriptionId]));
-          ws.close();
-        }
-        resolve(results);
-      }, 5000); // 5 seconds timeout for better profile fetching
-    });
-  }
-
-  async publish(kind, content, tags = []) {
-    if (!this.sk || !this.pubkey) {
-      throw new Error('No conectado a Nostr');
-    }
-
-    const event = {
-      kind,
-      pubkey: this.pubkey,
-      created_at: Math.floor(Date.now() / 1000),
-      tags,
-      content: typeof content === 'object' ? JSON.stringify(content) : content
-    };
-
-    const signed = finalizeEvent(event, this.sk);
-    
-    // Publish to all relays in PARALLEL
-    const publishPromises = RELAYS.map(relay => 
-      this.relayPublish(relay, signed)
-        .then(() => ({ relay, success: true }))
-        .catch(err => ({ relay, success: false, error: err.message }))
-    );
-    
-    const results = await Promise.all(publishPromises);
-    const successful = results.filter(r => r.success);
-    
-    if (successful.length === 0) {
-      throw new Error('No se pudo publicar a ningún relay');
-    }
-    
-    if (DEBUG) console.log(`Published to ${successful.length}/${RELAYS.length} relays`);
-    return signed;
-  }
-
-  relayPublish(relay, event) {
-    return new Promise((resolve, reject) => {
-      const ws = new WebSocket(relay);
-      const timeout = setTimeout(() => {
-        ws.close();
-        reject(new Error('Timeout'));
-      }, 5000); // 5 seconds timeout
-
-      ws.onopen = () => {
-        ws.send(JSON.stringify(['EVENT', event]));
-      };
-
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        clearTimeout(timeout);
-        ws.close();
-        if (data[0] === 'OK') {
-          resolve(data);
-        } else {
-          reject(new Error(data[1] || 'Unknown error'));
-        }
-      };
-
-      ws.onerror = () => {
-        clearTimeout(timeout);
-        reject(new Error('Connection failed'));
-      };
-    });
   }
 
   showAccount() {
