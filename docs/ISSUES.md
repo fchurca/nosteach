@@ -154,6 +154,29 @@ Firma de eventos delegateada al bunker remoto.
 
 ---
 
+### ⏸️ 12. Mensajería Privada NIP-17 (DIFERIDO)
+**Ubicación**: `src/lib/NostrConnect.js`
+
+Para implementar mensajería privada entre usuarios.
+
+**Jerarquía de NIPs**:
+```
+NIP-44 → Algoritmo de cifrado (ChaCha20-Poly1305)
+NIP-59 → Gift Wrap (encapsula eventos, oculta metadatos)
+NIP-17 → Esquema de mensajería (usa NIP-44 + NIP-59)
+```
+
+**Solución**:
+1. Implementar NIP-17 (no NIP-04 directamente)
+2. Usar `nostr-tools` que ya tiene NIP-44 y NIP-59 implementados
+3. Crear kind 14 (chat) con gift wraps kind 1059
+
+**Depende de**: Implementación de respuestas/devoluciones privadas entre usuarios.
+
+**Nota**: NIP-04 está deprecated. No implementar.
+
+---
+
 ## ✅ Completados Recientemente
 
 - Sistema de breadcrumbs dinámicos con historial de navegación
@@ -165,3 +188,7 @@ Firma de eventos delegateada al bunker remoto.
 - Mi Cuenta (#/p) con link a perfil público
 - Renombrado TeacherProfile → UserProfile para vistas genéricas
 - Breadcrumbs se actualizan al navegar, click navega y popea historial
+- **Auth NIP-07**: Login con extensión de navegador (Alby, nos2x)
+- **Refactor NostrConnect**: Clase standalone en `src/lib/NostrConnect.js`
+- **Detección dinámica de extensión**: `checkNip07Extension()` para extensiones que cargan tarde
+- **Session restore con verificación**: Verifica pubkey con extensión al restaurar sesión
