@@ -24,16 +24,35 @@ async function main() {
   await page.waitForTimeout(500);
   await screenshot(page, 'screenshots/02_login_form.png');
 
+  // Mock NIP-07 extension for screenshot 3
+  await page.evaluate(() => {
+    window.nostr = {
+      getPublicKey: async () => 'abcd1234567890abcdef',
+      signEvent: async (event) => { event.sig = 'mock_signature'; return event; }
+    };
+    window.dispatchEvent(new Event('nostr'));
+  });
+  await page.waitForTimeout(1000);
+
   // 03_nostr_trigger.png - Extension option visible (if NIP-07 available)
   await page.waitForTimeout(500);
   await screenshot(page, 'screenshots/03_nostr_trigger.png');
 
+  // 03b_qr_modal.png - QR modal from Nostr Connect button
+  await page.click('#nostrconnect-btn');
+  await page.waitForTimeout(3000);
+  await screenshot(page, 'screenshots/03b_qr_modal.png');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(500);
+
   // 04_nsec_filled.png - nsec input filled (we'll skip filling for now)
-  await page.fill('#nsec-input-header', 'nsec197dzw28nja08vdu5jzg77kduxff0l35as6dsy0v0w9ld9pu9ggdqu0w2hf');
+  await page.click('#user-menu-connect');
+  await page.waitForTimeout(500);
+  await page.fill('#login-unified-input', 'nsec197dzw28nja08vdu5jzg77kduxff0l35as6dsy0v0w9ld9pu9ggdqu0w2hf');
   await screenshot(page, 'screenshots/04_nsec_filled.png');
 
   // 05_after_login.png - After clicking connect
-  await page.click('#nsec-connect-header-btn');
+  await page.click('#connect-unified-btn');
   await page.waitForTimeout(3000);
   await screenshot(page, 'screenshots/05_after_login.png');
 
@@ -67,18 +86,21 @@ async function main() {
   await page.waitForTimeout(2000);
   await screenshot(page, 'screenshots/08_course_create_form.png');
 
-  // 09_account_page.png - Navigate to account
+  // 09_account_page.png - Navigate to account and wait for data to load
   await page.goto(BASE_URL + '/#/p');
-  await page.waitForTimeout(2000);
+  await page.waitForSelector('#user-menu-btn', { timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(3000);
   await screenshot(page, 'screenshots/09_account_page.png');
 
-  // 10_roles_page.png - Navigate to roles
+  // 10_roles_page.png - Navigate to roles via dropdown
+  await page.click('#user-menu-btn');
+  await page.waitForTimeout(500);
   await page.click('#menu-roles');
   await page.waitForTimeout(1000);
   await screenshot(page, 'screenshots/10_roles_page.png');
 
   // 11_home_complete.png - Back to home
-  await page.click('text=NosTeach');
+  await page.goto(BASE_URL + '/');
   await page.waitForTimeout(1000);
   await screenshot(page, 'screenshots/11_home_complete.png');
 
