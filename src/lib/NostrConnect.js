@@ -197,7 +197,7 @@ class NostrConnect {
     });
 
     try {
-      const user = await this.withTimeout(nostrSigner.blockUntilReady(), timeout, 'Nostr Connect timeout');
+      const user = await this.withTimeout(nostrSigner.blockUntilReady(), timeout, 'Tiempo de espera agotado');
       
       this.signer = nostrSigner;
       this.pubkey = user.pubkey;

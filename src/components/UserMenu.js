@@ -1,4 +1,5 @@
 import NostrConnect from '../lib/NostrConnect.js';
+import { NIP46_TIMEOUT } from '../lib/constants.js';
 
 class UserMenu {
   constructor(container, onConnect, onDisconnect) {
@@ -344,6 +345,12 @@ class UserMenu {
         <button id="close-qr-btn" style="margin-top: 12px; margin-left: 8px; padding: 8px 16px; background: transparent; color: var(--text-muted, #aaa); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer;">
           Cerrar
         </button>
+        <div id="nostrconnect-countdown" style="margin-top: 16px; font-size: 0.85rem; color: var(--text-muted, #aaa);">
+          Nuevo código en: <span id="countdown-seconds" style="color: var(--primary, #00ff9d);">120</span>s
+        </div>
+        <div id="nostrconnect-progress" style="margin-top: 8px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
+          <div id="progress-bar" style="height: 100%; background: var(--primary, #00ff9d); width: 100%; transition: width 1s linear;"></div>
+        </div>
         <div id="nostrconnect-status" style="margin-top: 16px; font-size: 0.85rem; color: var(--text-muted, #aaa);">
           Esperando aprobación...
         </div>
@@ -381,30 +388,91 @@ class UserMenu {
 
   async waitForNostrConnectApproval(modal) {
     const statusEl = modal.querySelector('#nostrconnect-status');
+    const countdownEl = modal.querySelector('#nostrconnect-countdown');
+    const progressBar = modal.querySelector('#progress-bar');
+    const qrContainer = modal.querySelector('#qr-container');
+    const uriInput = modal.querySelector('#nostrconnect-uri');
+    let cancelled = false;
+    let countdownInterval = null;
+
+    const TIMEOUT_SECONDS = NIP46_TIMEOUT / 1000;
     
-    try {
-      const result = await this.nostr.waitForNostrConnectApproval(120000);
+    const startCountdown = () => {
+      let seconds = TIMEOUT_SECONDS;
+      if (countdownEl) countdownEl.style.display = 'block';
+      if (progressBar) progressBar.style.width = '100%';
       
-      statusEl.textContent = '✓ Conectado!';
-      statusEl.style.color = 'var(--success, #00ff9d)';
+      if (countdownInterval) clearInterval(countdownInterval);
       
-      setTimeout(() => {
+      countdownInterval = setInterval(() => {
+        seconds--;
+        if (countdownEl) {
+          countdownEl.querySelector('#countdown-seconds').textContent = seconds;
+        }
+        if (progressBar) {
+          progressBar.style.width = (seconds / TIMEOUT_SECONDS * 100) + '%';
+        }
+        if (seconds <= 0) {
+          clearInterval(countdownInterval);
+        }
+      }, 1000);
+    };
+
+    modal.querySelector('#close-qr-btn').onclick = () => {
+      cancelled = true;
+      if (countdownInterval) clearInterval(countdownInterval);
+      modal.remove();
+    };
+
+    startCountdown();
+
+    while (!cancelled) {
+      try {
+        const result = await this.nostr.waitForNostrConnectApproval(NIP46_TIMEOUT);
+        
+        if (countdownInterval) clearInterval(countdownInterval);
+        statusEl.textContent = '✓ Conectado!';
+        statusEl.style.color = 'var(--success, #00ff9d)';
+        
         modal.remove();
         this.hideLogin();
         this.showUserLoggedIn();
         if (this.onConnect) {
           this.onConnect(this.nostr.pubkey, this.nostr);
         }
-      this.nostr.fetchProfile().then(profile => {
-        this.updateProfileDisplay();
-        if (window.app?.refreshAccount) {
+        this.nostr.fetchProfile().then(profile => {
+          this.updateProfileDisplay();
+          if (window.app?.refreshAccount) {
             window.app.refreshAccount();
           }
         });
-      }, 1500);
-    } catch (err) {
-      statusEl.textContent = '❌ ' + err.message;
-      statusEl.style.color = 'var(--error, #ff4444)';
+        return;
+      } catch (err) {
+        if (cancelled) return;
+
+        if (err.message.includes('timeout') || err.message.includes('agotado')) {
+          statusEl.textContent = '⏳ Venciendo... generando nuevo código';
+          
+          try {
+            const newUri = await this.nostr.startNostrConnect();
+            uriInput.value = newUri;
+            qrContainer.innerHTML = '';
+            this.generateQRCode(newUri, qrContainer);
+            
+            statusEl.textContent = 'Esperando aprobación...';
+            startCountdown();
+          } catch (retryErr) {
+            statusEl.textContent = '❌ ' + retryErr.message;
+            statusEl.style.color = 'var(--error, #ff4444)';
+            return;
+          }
+        } else {
+          if (countdownInterval) clearInterval(countdownInterval);
+          statusEl.textContent = '❌ ' + err.message;
+          statusEl.style.color = 'var(--error, #ff4444)';
+          return;
+        }
+      }
     }
   }
 

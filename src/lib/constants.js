@@ -38,3 +38,5 @@ export const TAGS = {
 };
 
 export const SATS_MAX = 2100000000000000; // 21M BTC en sats
+
+export const NIP46_TIMEOUT = 120000; // 2 minutos para Nostr Connect
