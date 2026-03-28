@@ -1,5 +1,6 @@
 import NostrConnect from '../lib/NostrConnect.js';
 import { NIP46_TIMEOUT } from '../lib/constants.js';
+import QRCode from 'qrcode';
 
 class UserMenu {
   constructor(container, onConnect, onDisconnect) {
@@ -352,20 +353,27 @@ class UserMenu {
   }
 
   generateQRCode(text, container) {
-    const qr = document.createElement('img');
-    qr.style.width = '200px';
-    qr.style.height = '200px';
-    qr.style.borderRadius = '8px';
-    qr.alt = 'QR Code';
-    qr.onload = () => {
-      container.innerHTML = '';
-      container.appendChild(qr);
-    };
-    qr.onerror = () => {
-      container.innerHTML = '<span style="color: var(--error);">Error cargando QR</span>';
-    };
-    const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
-    qr.src = url;
+    QRCode.toDataURL(text, { 
+      width: 200, 
+      margin: 1,
+      color: {
+        dark: '#0a0f1a',
+        light: '#ffffff'
+      }
+    })
+      .then((dataUrl) => {
+        container.innerHTML = '';
+        const qr = document.createElement('img');
+        qr.src = dataUrl;
+        qr.alt = 'QR Code';
+        qr.style.width = '200px';
+        qr.style.height = '200px';
+        qr.style.borderRadius = '8px';
+        container.appendChild(qr);
+      })
+      .catch((err) => {
+        container.innerHTML = '<span style="color: var(--error);">Error generando QR</span>';
+      });
   }
 
   async waitForNostrConnectApproval(modal) {
