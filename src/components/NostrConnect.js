@@ -17,11 +17,38 @@ class NostrConnect {
     this.profile = null;
     this.nip07 = false;
     this.render();
+    this.checkNip07Extension();
     this.restoreSession();
   }
 
   hasNip07() {
     return typeof window !== 'undefined' && window.nostr && typeof window.nostr.getPublicKey === 'function';
+  }
+
+  checkNip07Extension() {
+    if (this.hasNip07()) {
+      return;
+    }
+    
+    const check = () => {
+      if (this.hasNip07() && document.getElementById('nip07-connect-btn')) {
+        const btn = document.getElementById('nip07-connect-btn');
+        btn.disabled = false;
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.title = 'Conectar con extensión (Alby, nos2x...)';
+        btn.textContent = '⚡ Conectar con extensión (Alby, nos2x...)';
+        
+        const placeholder = btn.closest('.card')?.querySelector('.nip07-placeholder');
+        if (placeholder) placeholder.style.display = 'none';
+      }
+    };
+    
+    window.addEventListener('nostr', check, { once: true });
+    setTimeout(check, 1000);
+    setTimeout(check, 3000);
   }
 
   async handleNip07Connect() {
@@ -131,15 +158,25 @@ class NostrConnect {
     const savedNpub = localStorage.getItem('nostr_npub');
     const savedMethod = localStorage.getItem('nostr_method');
     
-    if (savedMethod === 'nip07' && savedPubkey) {
+    if (savedMethod === 'nip07') {
       if (!this.hasNip07()) {
         this.clearSession();
         return;
       }
       try {
-        this.pubkey = savedPubkey;
-        this.npub = savedNpub || nip19.npubEncode(savedPubkey);
+        const currentPubkey = await window.nostr.getPublicKey();
+        
+        if (savedPubkey && savedPubkey !== currentPubkey) {
+          this.clearSession();
+          return;
+        }
+        
+        this.pubkey = currentPubkey;
+        this.npub = nip19.npubEncode(currentPubkey);
         this.nip07 = true;
+        
+        localStorage.setItem('nostr_pubkey', currentPubkey);
+        localStorage.setItem('nostr_npub', this.npub);
         
         this.updateStatus('🟡 Sesión restaurada (extensión)', 'connected');
         this.showUserInfo();

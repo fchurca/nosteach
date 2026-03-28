@@ -27,12 +27,40 @@ class UserMenu {
     this.sk = null;
     this.profile = null;
     this.isOpen = false;
+    this._nip07HandlerAttached = false;
     this.render();
+    this.checkNip07Extension();
     this.restoreSession();
   }
 
   hasNip07() {
     return typeof window !== 'undefined' && window.nostr && typeof window.nostr.getPublicKey === 'function';
+  }
+
+  checkNip07Extension() {
+    const check = () => {
+      const btn = document.getElementById('nip07-connect-header-btn');
+      if (!btn) return;
+      
+      if (this.hasNip07()) {
+        btn.disabled = false;
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.title = 'Conectar con extensión (Alby, nos2x...)';
+        btn.textContent = '⚡ Conectar con extensión (Alby, nos2x...)';
+        
+        if (!this._nip07HandlerAttached) {
+          this._nip07HandlerAttached = true;
+          btn.addEventListener('click', () => this.handleNip07Connect());
+        }
+      }
+    };
+    
+    window.addEventListener('nostr', check, { once: true });
+    setTimeout(check, 500);
+    setTimeout(check, 2000);
   }
 
   async handleNip07Connect() {
@@ -44,6 +72,7 @@ class UserMenu {
     try {
       const pubkey = await window.nostr.getPublicKey();
       this.pubkey = pubkey;
+      
       this.npub = this.npub || nip19.npubEncode(pubkey);
       this.sk = null;
       
@@ -51,6 +80,7 @@ class UserMenu {
       localStorage.setItem('nostr_npub', this.npub);
       localStorage.setItem('nostr_method', 'nip07');
       
+      this.showUserLoggedIn();
       this.closeDropdown();
       if (this.onConnect) {
         this.onConnect(this.pubkey, this);
@@ -159,7 +189,7 @@ class UserMenu {
     }
 
     const nip07Btn = document.getElementById('nip07-connect-header-btn');
-    if (nip07Btn && !nip07Btn.disabled) {
+    if (nip07Btn) {
       nip07Btn.addEventListener('click', () => this.handleNip07Connect());
     }
 
@@ -291,8 +321,37 @@ class UserMenu {
     const savedSk = localStorage.getItem(SESSION_KEYS.sk);
     const savedPubkey = localStorage.getItem(SESSION_KEYS.pubkey);
     const savedNpub = localStorage.getItem(SESSION_KEYS.npub);
+    const savedMethod = localStorage.getItem('nostr_method');
     
-    if (savedSk && savedPubkey) {
+    if (savedMethod === 'nip07' && savedPubkey) {
+      if (!this.hasNip07()) {
+        this.clearSession();
+        return;
+      }
+      try {
+        const currentPubkey = await window.nostr.getPublicKey();
+        
+        if (savedPubkey && savedPubkey !== currentPubkey) {
+          this.clearSession();
+          return;
+        }
+        
+        this.pubkey = currentPubkey;
+        this.npub = nip19.npubEncode(currentPubkey);
+        
+        localStorage.setItem(SESSION_KEYS.pubkey, currentPubkey);
+        localStorage.setItem(SESSION_KEYS.npub, this.npub);
+        
+        this.showUserLoggedIn();
+        
+        if (this.onConnect) {
+          this.onConnect(this.pubkey, this);
+        }
+      } catch (err) {
+        console.error('Error restoring NIP-07 session:', err);
+        this.clearSession();
+      }
+    } else if (savedSk && savedPubkey) {
       try {
         this.sk = new Uint8Array(savedSk.split(',').map(Number));
         this.pubkey = savedPubkey;
