@@ -1,5 +1,20 @@
 # Changelog - NosTeach
 
+## 2026-03-27 (NIP-07 + Login + Tests)
+
+### Added
+- **NIP-07 support**: Login con extensión de navegador (Alby, nos2x)
+- **Detección dinámica**: checkNip07Extension() para extensiones que cargan tarde
+- **Test suite NIP-07**: tests/nip07.mjs con 4 tests con mocks
+
+### Fixed
+- **showUserLoggedIn()**: Ahora se llama tras conexión NIP-07
+- **Session restore**: Verifica pubkey con extensión (previene stale sessions)
+- **NIP-07 button handler**: Adjunto correctamente aunque esté disabled
+- **Tests redundantes**: Removidos 3 tests de NIP-07 de e2e.mjs
+
+---
+
 ## 2026-03-27 (Navigation + Deep Links + Breadcrumbs + IDs)
 
 ### Added
