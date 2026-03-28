@@ -289,13 +289,25 @@ class UserMenu {
       z-index: 10000;
     `;
 
+    const closeModal = () => {
+      modal.remove();
+      document.removeEventListener('keydown', handleEsc);
+    };
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', handleEsc);
+
     modal.innerHTML = `
       <div style="background: var(--card-bg, #1a1a1a); padding: 24px; border-radius: 12px; max-width: 400px; text-align: center;">
         <h3 style="margin: 0 0 16px 0;">📱 Conectar con Nostr Connect</h3>
         <p style="font-size: 0.9rem; color: var(--text-muted, #aaa); margin-bottom: 16px;">
           Escaneá este código QR con tu bunker o app de Nostr
         </p>
-        <div id="qr-container" style="margin: 16px 0; display: flex; justify-content: center;"></div>
+        <div id="qr-container" style="margin: 16px 0; display: flex; justify-content: center;">
+          <div class="skeleton" style="width: 200px; height: 200px; border-radius: 8px; background: rgba(255,255,255,0.1);"></div>
+        </div>
         <p style="font-size: 0.8rem; color: var(--text-muted, #aaa); margin-bottom: 16px;">
           O copiá este link:
         </p>
@@ -331,9 +343,9 @@ class UserMenu {
       modal.querySelector('#copy-uri-btn').textContent = '✓ Copiado!';
     });
 
-    modal.querySelector('#close-qr-btn').addEventListener('click', () => modal.remove());
+    modal.querySelector('#close-qr-btn').addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
+      if (e.target === modal) closeModal();
     });
 
     this.waitForNostrConnectApproval(modal);
@@ -341,11 +353,19 @@ class UserMenu {
 
   generateQRCode(text, container) {
     const qr = document.createElement('img');
+    qr.style.width = '200px';
+    qr.style.height = '200px';
+    qr.style.borderRadius = '8px';
+    qr.alt = 'QR Code';
+    qr.onload = () => {
+      container.innerHTML = '';
+      container.appendChild(qr);
+    };
+    qr.onerror = () => {
+      container.innerHTML = '<span style="color: var(--error);">Error cargando QR</span>';
+    };
     const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
     qr.src = url;
-    qr.alt = 'QR Code';
-    qr.style.borderRadius = '8px';
-    container.appendChild(qr);
   }
 
   async waitForNostrConnectApproval(modal) {
