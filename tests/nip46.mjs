@@ -99,6 +99,33 @@ async function runTests() {
 
     await cleanup();
 
+    await test('Nost Connect QR button opens modal', async () => {
+      const connectBtn = await page.locator('#user-menu-connect');
+      await connectBtn.click();
+      
+      const loginPanel = await page.locator('#user-menu-login');
+      await loginPanel.waitFor({ state: 'visible' });
+      
+      const ncBtn = await page.locator('#nostrconnect-btn');
+      await ncBtn.click();
+      
+      await page.waitForTimeout(3000);
+      
+      const modal = await page.locator('#nostrconnect-qr-modal');
+      const modalVisible = await modal.count() > 0;
+      
+      if (!modalVisible) {
+        throw new Error('Nostr Connect modal should open');
+      }
+      
+      const qrImg = await page.locator('#nostrconnect-qr-modal img');
+      const qrVisible = await qrImg.count() > 0;
+      
+      console.log('  → QR visible:', qrVisible);
+    });
+
+    await cleanup();
+
     await test('Can login with nsec after NIP-46 UI shown', async () => {
       const connectBtn = await page.locator('#user-menu-connect');
       await connectBtn.click();

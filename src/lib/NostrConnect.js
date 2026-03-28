@@ -21,21 +21,37 @@ let NDK = null;
 let NDKNip46Signer = null;
 let NDKPrivateKeySigner = null;
 let ndkInstance = null;
+let ndkLoading = null;
 
 async function getNDK() {
-  if (!ndkInstance && typeof window !== 'undefined') {
+  if (ndkInstance) return ndkInstance;
+  if (ndkLoading) return ndkLoading;
+  
+  ndkLoading = (async () => {
     try {
       const ndkModule = await import('@nostr-dev-kit/ndk');
-      NDK = ndkModule.NDK;
+      
+      NDK = ndkModule.default || ndkModule.NDK;
       NDKNip46Signer = ndkModule.NDKNip46Signer;
       NDKPrivateKeySigner = ndkModule.NDKPrivateKeySigner;
+      
+      console.log('[NostrConnect] NDK:', typeof NDK, 'NDKNip46Signer:', typeof NDKNip46Signer);
+      
+      if (!NDK) {
+        throw new Error('NDK not found in module');
+      }
+      
       ndkInstance = new NDK({ explicitRelayUrls: RELAYS });
       ndkInstance.connect();
+      return ndkInstance;
     } catch (err) {
-      console.warn('NDK not available:', err);
+      console.error('[NostrConnect] Failed to load NDK:', err);
+      ndkLoading = null;
+      throw err;
     }
-  }
-  return ndkInstance;
+  })();
+  
+  return ndkLoading;
 }
 
 class NostrConnect {
@@ -135,31 +151,48 @@ class NostrConnect {
   }
 
   async startNostrConnect(relayUrl = 'wss://relay.nsec.app') {
-    this.ndk = await getNDK();
-    if (!this.ndk || !NDKNip46Signer || !NDKPrivateKeySigner) {
-      throw new Error('NDK no disponible');
+    try {
+      this.ndk = await getNDK();
+      
+      if (!this.ndk) {
+        throw new Error('No se pudo inicializar NDK');
+      }
+      if (!NDKNip46Signer) {
+        throw new Error('NDKNip46Signer no disponible');
+      }
+      if (!NDKPrivateKeySigner) {
+        throw new Error('NDKPrivateKeySigner no disponible');
+      }
+
+      const clientSigner = NDKPrivateKeySigner.generate();
+      this.clientSecret = clientSigner.nsec;
+      const clientPubkey = clientSigner.publicKey;
+      
+      this.nostrConnectUri = `nostrconnect://${clientPubkey}?relay=${encodeURIComponent(relayUrl)}&secret=${encodeURIComponent(this.clientSecret)}&name=NosTeach`;
+
+      return this.nostrConnectUri;
+    } catch (err) {
+      console.error('[NostrConnect] startNostrConnect error:', err);
+      throw err;
     }
-
-    const clientSk = generateSecretKey();
-    this.clientSecret = NDKPrivateKeySigner.generate().nsec;
-    
-    this.nostrConnectUri = `nostrconnect://${getPublicKey(this.sk || clientSk)}?relay=${encodeURIComponent(relayUrl)}&secret=${encodeURIComponent(this.clientSecret)}&name=NosTeach`;
-
-    return this.nostrConnectUri;
   }
 
   async waitForNostrConnectApproval(timeout = 30000) {
+    if (!this.ndk) {
+      this.ndk = await getNDK();
+    }
+    
     if (!this.ndk || !NDKNip46Signer) {
       throw new Error('NDK no disponible');
     }
 
-    const clientSk = this.clientSecret;
-    if (!clientSk) {
-      throw new Error('No se iniciï¿½ sesiï¿½n de Nostr Connect');
+    const clientSecret = this.clientSecret;
+    if (!clientSecret) {
+      throw new Error('No se inició sesión de Nostr Connect');
     }
 
     const relayUrl = 'wss://relay.nsec.app';
-    const nostrSigner = NDKNip46Signer.nostrconnect(this.ndk, relayUrl, clientSk, {
+    const nostrSigner = NDKNip46Signer.nostrconnect(this.ndk, relayUrl, clientSecret, {
       name: 'NosTeach',
     });
 
