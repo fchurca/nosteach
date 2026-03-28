@@ -77,79 +77,48 @@ Cuando el usuario navega a un curso desde la lista, no hay manera de saber desde
 
 ---
 
-### ⏸️ 5. Timeout de sesión no manejado (DIFERIDO)
-**Ubicación**: `src/components/UserMenu.js`
+### 5. Sistema de Relays Dinámico
+**Problema**: Currently hardcoded relays. Should:
+1. Try to get relays from user's Nostr profile (kind 0, `relays` field)
+2. Allow manual override in localStorage (`nostr_relays`)
+3. Fallback to `DEFAULT_RELAYS` if none available
 
-No hay expiración de sesión ni renovación de tokens. El usuario puede quedar "atrapado" en sesión indefinidamente.
+**Ubicación**: `src/lib/NostrConnect.js`, `src/lib/constants.js`
 
-**Solución**: Agregar timestamp de login y validar expiración (ej: 24h).
+```javascript
+function getRelays() {
+  const saved = localStorage.getItem('nostr_relays');
+  if (saved) return JSON.parse(saved);
+  // Could get from profile after first fetch
+  return DEFAULT_RELAYS;
+}
+```
+
+**Nota**: Los perfiles Nostr pueden tener un array `relays` en su contenido JSON.
 
 ---
 
 ### ✅ 6. Sin feedback cuando relays no responden
-**Ubicación**: `src/lib/nostr.js`, `src/components/UserMenu.js`
-
-Cuando los relays están caídos o no responden, el usuario no tiene feedback de qué está pasando.
-
-**Solución**: Agregado sistema de estado de conexión en nostr.js con callback. Agregado indicador visual en header de App.js.
 
 ---
 
 ### ✅ 7. URLs profundas (accesibles desde bookmarks)
-**Ubicación**: `src/App.js`
-
-El usuario no puede acceder directamente a cursos o docentes via URL (ej: `#/c/{eventId}`).
-
-**Solución**: Agregada ruta `#/c/{eventId}` en initHashRouting. CourseView ahora recibe `isDirectAccess` para no mostrar breadcrumb si viene de URL directa (bookmark). Breadcrumbs solo aparecen cuando navega internamente.
 
 ---
 
 ### ✅ 8. Vista de usuario con /p/
-**Ubicación**: `src/App.js`
-
-Agregar ruta `#/p/{npub}` que muestre vista de usuario con sus cursos publicados.
-
-**Solución implementada**: 
-- Ruta `#/p` muestra "Mi Cuenta" del usuario logueado
-- Ruta `#/p/{npub}` muestra perfil público de cualquier usuario
-- Componente UserProfile (renombrado de TeacherProfile)
-- Vista incluye link a "Mi perfil público" en Mi Cuenta
 
 ---
 
 ### ✅ 9. Auth NIP-07 (Login con extensión de navegador)
-**Ubicación**: `src/lib/NostrConnect.js`, `src/components/UserMenu.js`
-
-Implementado:
-- Detectar `window.nostr` al cargar
-- Botón "Conectar con extensión"
-- Usar `window.nostr.getPublicKey()` y `signEvent()`
-- Detección dinámica de extensión
-- Session restore con verificación
 
 ---
 
 ### ✅ 10. Auth NIP-46 Básico (Connection Request)
-**Ubicación**: `src/lib/NostrConnect.js`, `src/components/UserMenu.js`
-
-Implementado:
-- UI: Input para bunker URL
-- Botón "Conectar con bunker"
-- Botón "Nostr Connect (QR)" con modal
-- Generación de QR local con qrcode
-- Espera de aprobación del bunker
 
 ---
 
 ### ✅ 11. Auth NIP-46 Completo (Remote Signing)
-**Ubicación**: `src/lib/NostrConnect.js`
-
-Implementado:
-- Integración con `@nostr-dev-kit/ndk`
-- `NDKNip46Signer.bunker()` para conexión
-- `NDKNip46Signer.nostrconnect()` para QR
-- `signEvent()` delegando al signer
-- Session restore automático
 
 ---
 

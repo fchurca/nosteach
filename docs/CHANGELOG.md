@@ -16,6 +16,7 @@
 - **QR countdown**: Visual de 120s con retry automático al vencer, NIP46_TIMEOUT centralizado
 
 ### Fixed
+- **Sesión perenne**: Sin timeout, la sesión dura para siempre en localStorage
 - **Infinite reload loop**: Tab sync ahora usa _isTabSync para evitar reload infinito
 - **NDK import**: Usar `ndkModule.default || ndkModule.NDK**
 - **Logout**: Limpia todos los datos de sesión

@@ -4,14 +4,7 @@ import { BunkerSigner, parseBunkerInput } from 'nostr-tools/nip46';
 import { SimplePool } from 'nostr-tools/pool';
 import { DEBUG, DEFAULT_RELAYS } from './constants.js';
 
-const RELAYS = [
-  'wss://nos.lol',
-  'wss://relay.damus.io',
-  'wss://purplepag.es',
-  'wss://filter.nostr.wine',
-  'wss://relay.snort.social',
-  'wss://inbox.nostr.wine'
-];
+const RELAYS = DEFAULT_RELAYS;
 
 const SESSION_KEYS = {
   sk: 'nostr_sk',
