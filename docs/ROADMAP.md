@@ -51,7 +51,7 @@ La educación online actual está centralizada en plataformas que:
 | Nostr | nostr-tools (WebSocket directo) |
 | Pagos | @getalby/sdk (NWC), webln |
 | Storage | Relays Nostr (NIP-78) |
-| Auth | Nostr keypair (NIP-07) |
+| Auth | Nostr keypair (NIP-07, NIP-46) |
 | Tests | Playwright |
 
 ---

@@ -1,5 +1,20 @@
 # Changelog - NosTeach
 
+## 2026-03-28 (NIP-46 + UX)
+
+### Added
+- **NIP-46 support**: Login con bunker (bunker://...) y Nostr Connect (QR)
+- **NIP-46 Remote Signing**: Integración con @nostr-dev-kit/ndk
+- **Test suite NIP-46**: tests/nip46.mjs con 6 tests
+- **Mi Cuenta UX**: Skeleton de carga, "(no definido)" para campos vacíos
+- **UserMenu estados**: "(cargando...)" y "(sin nombre)" en gris
+
+### Fixed
+- **NDK import**: Usar `ndkModule.default || ndkModule.NDK`
+- **Logout**: Limpia todos los datos de sesión
+
+---
+
 ## 2026-03-27 (NIP-07 + Login + Tests)
 
 ### Added
