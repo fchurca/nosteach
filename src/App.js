@@ -227,6 +227,7 @@ class App {
     this.nostr = nostrInstance;
     if (DEBUG) console.log('Nostr conectado:', pubkey);
     this.loadRoles();
+    this.refreshCurrentView();
   }
 
   refreshAccount() {
@@ -244,12 +245,23 @@ class App {
     }
   }
 
-  async onNostrDisconnect() {
+  async onNostrDisconnect(npub) {
     this.pubkey = null;
     this.roles = { teacher: false, student: false, sponsor: false };
     this.updateNav();
     await this.initNostrReadOnly();
-    if (DEBUG) console.log('Sesión cerrada. reconectado en modo lectura');
+    if (DEBUG) console.log('Sesión cerrada. reconectado en modo lectura. npub:', npub);
+    
+    // Si estaba en Mi Cuenta (#/p), ir a su perfil público
+    const hash = window.location.hash;
+    console.log('[App] onNostrDisconnect, hash:', hash, 'npub:', npub);
+    if (hash.startsWith('#/p') && !hash.startsWith('#/p/')) {
+      if (npub) {
+        window.location.hash = '#/p/' + npub;
+      } else {
+        window.location.hash = '#/';
+      }
+    }
   }
 
   onRolesChange(roles) {
@@ -314,7 +326,7 @@ class App {
       this.userMenu = new UserMenu(
         userMenuContainer,
         (pubkey, nostr) => this.onNostrConnect(pubkey, nostr),
-        () => this.onNostrDisconnect()
+        (npub) => this.onNostrDisconnect(npub)
       );
       window.userMenu = this.userMenu;
     }

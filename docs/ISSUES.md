@@ -197,3 +197,5 @@ NIP-17 → Esquema de mensajería (usa NIP-44 + NIP-59)
 - **QR countdown**: Visual de 120s con retry automático al vencer
 - **QR local**: Genera con qrcode (no API externa)
 - **Modal QR**: Cierra con ESC, skeleton mientras carga
+- **Logout desde #/p**: Redirige a perfil público
+- **Login/Logout**: Refresca vista actual

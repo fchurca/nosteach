@@ -220,6 +220,56 @@ async function runTests() {
       }
     });
 
+    // Test logout from #/p should go to public profile
+    await test('Logout from #/p redirects to public profile', async () => {
+      // Login first
+      await page.goto(URL, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1000);
+      
+      const connectBtn = await page.locator('#user-menu-connect');
+      await connectBtn.click();
+      
+      const nsecInput = await page.locator('#login-unified-input');
+      await nsecInput.fill(NSEC_TEST);
+      
+      const nsecBtn = await page.locator('#connect-unified-btn');
+      await nsecBtn.click();
+      
+      await page.waitForTimeout(3000);
+      
+      // Go to #/p
+      await page.goto(URL + '#/p', { waitUntil: 'networkidle' });
+      await page.waitForTimeout(2000);
+      
+      // Verify we're on #/p (Mi Cuenta)
+      let hash = await page.evaluate(() => window.location.hash);
+      console.log('  → Before logout, hash:', hash);
+      
+      // Disconnect
+      const userBtn = await page.locator('#user-menu-btn');
+      await userBtn.click();
+      await page.waitForTimeout(500);
+      
+      const disconnectLink = await page.locator('a:has-text("Desconectar")');
+      await disconnectLink.click();
+      await page.waitForTimeout(2000);
+      
+      // Check where we ended up
+      hash = await page.evaluate(() => window.location.hash);
+      console.log('  → After logout, hash:', hash);
+      
+      // Should redirect to #/p/{npub}, not #/ or stay on #/p
+      if (hash === '#/p' || hash === '#/p/') {
+        throw new Error('Logout from #/p should redirect to public profile, not stay on #/p');
+      }
+      if (hash === '#/' || hash === '') {
+        throw new Error('Logout from #/p should redirect to public profile, not home');
+      }
+      if (!hash.startsWith('#/p/')) {
+        throw new Error('Logout from #/p should redirect to #/p/{npub}, got: ' + hash);
+      }
+    });
+
     // Test 7e: Mi Cuenta shows the user is logged in (npub visible)
     await test('Mi Cuenta shows logged in state', async () => {
       await page.evaluate(() => localStorage.clear());

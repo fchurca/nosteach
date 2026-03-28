@@ -12,11 +12,13 @@
 - **QR countdown**: Visual de 120s con retry automático al vencer, NIP46_TIMEOUT centralizado
 
 ### Fixed
-- **NDK import**: Usar `ndkModule.default || ndkModule.NDK`
+- **NDK import**: Usar `ndkModule.default || ndkModule.NDK**
 - **Logout**: Limpia todos los datos de sesión
 - **Modal QR**: Cierra con ESC
 - **QR local**: Genera con qrcode (no API externa), skeleton mientras carga
 - **QR colores**: Fondo oscuro #0a0f1a, fondo blanco
+- **Logout desde #/p**: Redirige a perfil público (#/p/{npub})
+- **Login/Logout**: Refresca la vista actual
 
 ---
 

@@ -532,12 +532,15 @@ class UserMenu {
   }
 
   disconnect() {
+    // Get npub BEFORE clearing session
+    const npub = this.nostr?.npub || localStorage.getItem('nostr_npub');
+    console.log('[UserMenu] Disconnect, npub:', npub);
     this.nostr.disconnect();
     this.closeDropdown();
     this.showLoggedOut();
     
     if (this.onDisconnect) {
-      this.onDisconnect();
+      this.onDisconnect(npub);
     }
   }
 
