@@ -452,67 +452,119 @@ class App {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
 
-    const isLoggedIn = this.pubkey || (this.userMenu?.pubkey) || localStorage.getItem('nostr_pubkey');
-    
-    if (!isLoggedIn) {
-      contentArea.innerHTML = `
-        <div class="card">
-          <h2>👤 Mi Cuenta</h2>
-          <p>Conectá tu identidad Nostr para ver tu cuenta.</p>
-        </div>
-      `;
-      return;
-    }
+    const renderView = () => {
+      const currentPubkey = this.pubkey || this.nostr?.pubkey || localStorage.getItem('nostr_pubkey');
+      const currentNpub = this.nostr?.npub || localStorage.getItem('nostr_npub') || '';
+      
+      if (!currentPubkey) {
+        contentArea.innerHTML = `
+          <div class="card">
+            <h2>👤 Mi Cuenta</h2>
+            <p>Conectá tu identidad Nostr para ver tu cuenta.</p>
+          </div>
+        `;
+        return;
+      }
 
-    const pubkey = this.pubkey || this.userMenu?.pubkey || localStorage.getItem('nostr_pubkey');
-    const npub = this.userMenu?.npub || '';
-    const profile = this.userMenu?.profile || {};
-    const roles = profile;
+      const pubkey = currentPubkey;
+      const npub = currentNpub;
+      
+      const showLoading = () => {
+        contentArea.innerHTML = `
+          <div class="card">
+            <h2>👤 Mi Cuenta</h2>
+            <p style="color: var(--text-muted);">Cargando información...</p>
+            <div class="skeleton" style="background: rgba(255,255,255,0.1); height: 20px; border-radius: 4px; margin: 10px 0; width: 60%;"></div>
+            <div class="skeleton" style="background: rgba(255,255,255,0.1); height: 20px; border-radius: 4px; margin: 10px 0; width: 40%;"></div>
+          </div>
+        `;
+      };
 
-    contentArea.innerHTML = `
-      <div class="card">
-        <h2>👤 Mi Cuenta</h2>
+      const renderAccount = (profile = {}) => {
+        const roles = profile;
+        const displayName = profile.display_name || profile.name || '';
+        const lightningInfo = profile.lud16 || profile.lnurl || '';
         
-        <div class="profile-info" style="margin-bottom: 20px;">
-          <div style="margin-bottom: 10px;">
-            <strong>Nombre:</strong> ${profile.display_name || profile.name || 'No tenés perfil en Nostr'}
-          </div>
-          <div style="margin-bottom: 10px;">
-            <strong>Lightning:</strong> 
-            ${profile.lud16 || profile.lnurl ? 
-              '<code style="background: rgba(0,255,157,0.1); padding: 2px 8px; border-radius: 4px;">' + (profile.lud16 || 'LNURL configurado') + '</code>' : 
-              '<span style="color: var(--text-muted);">No configurado</span>'}
-          </div>
-          <div style="margin-bottom: 10px;">
-            <strong>npub:</strong> 
-            <code style="font-size: 0.85em; font-family: monospace;">${npub}</code>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <strong>hex:</strong> 
-            <code style="font-size: 0.85em; font-family: monospace;">${pubkey}</code>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <strong>Roles activos:</strong>
-            <span style="color: #00ff9d;">${Object.entries(this.roles).filter(([_, v]) => v).map(([k]) => k).join(', ') || 'Ninguno'}</span>
-          </div>
-        </div>
+        contentArea.innerHTML = `
+          <div class="card">
+            <h2>👤 Mi Cuenta</h2>
+            
+            <div class="profile-info" style="margin-bottom: 20px;">
+              <div style="margin-bottom: 10px;">
+                <strong>Nombre:</strong> ${displayName ? displayName : '<span style="color: var(--text-muted);">(no definido)</span>'}
+              </div>
+              <div style="margin-bottom: 10px;">
+                <strong>Lightning:</strong> 
+                ${lightningInfo ? 
+                  '<code style="background: rgba(0,255,157,0.1); padding: 2px 8px; border-radius: 4px;">' + lightningInfo + '</code>' : 
+                  '<span style="color: var(--text-muted);">(no definido)</span>'}
+              </div>
+              <div style="margin-bottom: 10px;">
+                <strong>npub:</strong> 
+                <code style="font-size: 0.85em; font-family: monospace;">${npub || '<span style="color: var(--text-muted);">(no definido)</span>'}</code>
+              </div>
+              <div style="margin-bottom: 10px;">
+                <strong>hex:</strong> 
+                <code style="font-size: 0.85em; font-family: monospace;">${pubkey || '<span style="color: var(--text-muted);">(no definido)</span>'}</code>
+              </div>
+              <div style="margin-bottom: 10px;">
+                <strong>Roles activos:</strong>
+                <span style="color: #00ff9d;">${Object.entries(this.roles).filter(([_, v]) => v).map(([k]) => k).join(', ') || 'Ninguno'}</span>
+              </div>
+            </div>
 
-        ${!profile.name && !profile.display_name ? `
-          <div style="background: rgba(255,200,0,0.1); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-            <p style="margin: 0; font-size: 0.9rem;">
-              💡 Para configurar tu perfil, usá una app como <a href="https://primal.net" target="_blank" style="color: var(--accent);">Primal</a> o <a href="https://damus.io" target="_blank" style="color: var(--accent);">Damus</a>.
+            ${npub ? `
+              <p style="margin-bottom: 15px;">
+                <a href="#/p/${npub}" style="color: var(--accent);">→ Mi perfil público</a>
+              </p>
+            ` : ''}
+
+            ${!profile.name && !profile.display_name ? `
+              <div style="background: rgba(255,200,0,0.1); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                <p style="margin: 0; font-size: 0.9rem;">
+                  💡 Para configurar tu perfil, usá una app como <a href="https://primal.net" target="_blank" style="color: var(--accent);">Primal</a> o <a href="https://damus.io" target="_blank" style="color: var(--accent);">Damus</a>.
+                </p>
+              </div>
+            ` : ''}
+
+            <p style="color: var(--text-muted); margin-bottom: 15px;">
+              Los roles se guardan localmente. Editá tu perfil Nostr para guardar permanentemente.
             </p>
+            <button onclick="window.app?.navigate('roles')" class="btn-secondary">
+              Editar Roles
+            </button>
           </div>
-        ` : ''}
+        `;
+      };
 
-        <p style="color: var(--text-muted); margin-bottom: 15px;">
-          Los roles se guardan localmente. Editá tu perfil Nostr para guardar permanentemente.
-        </p>
-        <button onclick="window.app?.navigate('roles')" class="btn-secondary">
-          Editar Roles
-        </button>
-      </div>
-    `;
+      const existingProfile = this.nostr?.profile;
+      if (existingProfile) {
+        renderAccount(existingProfile);
+      } else if (this.nostr?.fetchProfile) {
+        showLoading();
+        
+        this.nostr.fetchProfile().then(profile => {
+          this.refreshAccount();
+        }).catch(() => {
+          renderAccount({});
+        });
+      } else {
+        renderAccount({});
+      }
+    };
+
+    if (this.nostr) {
+      renderView();
+    } else {
+      const checkInterval = setInterval(() => {
+        if (this.nostr) {
+          clearInterval(checkInterval);
+          renderView();
+        }
+      }, 500);
+      
+      setTimeout(() => clearInterval(checkInterval), 10000);
+    }
   }
 
   showRoles() {

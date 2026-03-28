@@ -109,6 +109,15 @@ class UserMenu {
             <small id="nsec-help" style="display: block; margin-bottom: 8px; font-size: 0.8rem; color: var(--text-muted);">Nunca se comparte - se usa solo para iniciar sesión localmente</small>
             <div id="login-error" style="color: var(--error); font-size: 0.85rem; margin-bottom: 8px; display: none;"></div>
             <button id="nsec-connect-header-btn" style="width: 100%;">Conectar</button>
+            
+            <div id="nip46-section" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">— o conectar con bunker —</div>
+              <input type="text" id="bunker-url-input" placeholder="bunker://..." style="width: 100%; margin-bottom: 8px;">
+              <button id="bunker-connect-btn" style="width: 100%; margin-bottom: 8px;">🏰 Conectar con bunker</button>
+              
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">— o —</div>
+              <button id="nostrconnect-btn" style="width: 100%;">🔗 Nostr Connect (QR)</button>
+            </div>
           </div>
         </div>
       </div>
@@ -158,6 +167,23 @@ class UserMenu {
       nsecInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') this.handleConnect();
       });
+    }
+
+    const bunkerBtn = document.getElementById('bunker-connect-btn');
+    if (bunkerBtn) {
+      bunkerBtn.addEventListener('click', () => this.handleBunkerConnect());
+    }
+
+    const bunkerInput = document.getElementById('bunker-url-input');
+    if (bunkerInput) {
+      bunkerInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') this.handleBunkerConnect();
+      });
+    }
+
+    const nostrConnectBtn = document.getElementById('nostrconnect-btn');
+    if (nostrConnectBtn) {
+      nostrConnectBtn.addEventListener('click', () => this.handleNostrConnect());
     }
 
     document.addEventListener('click', (e) => {
@@ -244,6 +270,144 @@ class UserMenu {
     }
   }
 
+  async handleBunkerConnect() {
+    const input = document.getElementById('bunker-url-input');
+    const url = input?.value.trim();
+    if (!url) {
+      this.showLoginError('Ingresá la URL del bunker');
+      return;
+    }
+
+    try {
+      await this.nostr.connectBunker(url);
+      this.hideLogin();
+      this.showUserLoggedIn();
+      if (this.onConnect) {
+        this.onConnect(this.nostr.pubkey, this.nostr);
+      }
+      this.nostr.fetchProfile().then(profile => {
+        this.updateProfileDisplay();
+        if (window.app?.refreshAccount) {
+          window.app.refreshAccount();
+        }
+      });
+    } catch (err) {
+      console.error('Bunker connect error:', err);
+      this.showLoginError(err.message);
+    }
+  }
+
+  async handleNostrConnect() {
+    try {
+      const uri = await this.nostr.startNostrConnect();
+      this.showNostrConnectQR(uri);
+    } catch (err) {
+      console.error('Nostr Connect error:', err);
+      this.showLoginError(err.message);
+    }
+  }
+
+  showNostrConnectQR(uri) {
+    const existingModal = document.getElementById('nostrconnect-qr-modal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'nostrconnect-qr-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+
+    modal.innerHTML = `
+      <div style="background: var(--card-bg, #1a1a1a); padding: 24px; border-radius: 12px; max-width: 400px; text-align: center;">
+        <h3 style="margin: 0 0 16px 0;">📱 Conectar con Nostr Connect</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted, #aaa); margin-bottom: 16px;">
+          Escaneá este código QR con tu bunker o app de Nostr
+        </p>
+        <div id="qr-container" style="margin: 16px 0; display: flex; justify-content: center;"></div>
+        <p style="font-size: 0.8rem; color: var(--text-muted, #aaa); margin-bottom: 16px;">
+          O copiá este link:
+        </p>
+        <input type="text" id="nostrconnect-uri" readonly value="${uri}" 
+          style="width: 100%; padding: 8px; font-size: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: var(--text-primary, #fff);">
+        <button id="copy-uri-btn" style="margin-top: 12px; padding: 8px 16px; background: var(--primary, #00ff9d); color: #000; border: none; border-radius: 4px; cursor: pointer;">
+          📋 Copiar
+        </button>
+        <button id="close-qr-btn" style="margin-top: 12px; margin-left: 8px; padding: 8px 16px; background: transparent; color: var(--text-muted, #aaa); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer;">
+          Cerrar
+        </button>
+        <div id="nostrconnect-status" style="margin-top: 16px; font-size: 0.85rem; color: var(--text-muted, #aaa);">
+          Esperando aprobación...
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const qrContainer = modal.querySelector('#qr-container');
+    this.generateQRCode(uri, qrContainer);
+
+    modal.querySelector('#copy-uri-btn').addEventListener('click', () => {
+      const uriInput = modal.querySelector('#nostrconnect-uri');
+      uriInput.select();
+      document.execCommand('copy');
+      modal.querySelector('#copy-uri-btn').textContent = '✓ Copiado!';
+    });
+
+    modal.querySelector('#close-qr-btn').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+
+    this.waitForNostrConnectApproval(modal);
+  }
+
+  generateQRCode(text, container) {
+    const qr = document.createElement('img');
+    const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
+    qr.src = url;
+    qr.alt = 'QR Code';
+    qr.style.borderRadius = '8px';
+    container.appendChild(qr);
+  }
+
+  async waitForNostrConnectApproval(modal) {
+    const statusEl = modal.querySelector('#nostrconnect-status');
+    
+    try {
+      const result = await this.nostr.waitForNostrConnectApproval(120000);
+      
+      statusEl.textContent = '✓ Conectado!';
+      statusEl.style.color = 'var(--success, #00ff9d)';
+      
+      setTimeout(() => {
+        modal.remove();
+        this.hideLogin();
+        this.showUserLoggedIn();
+        if (this.onConnect) {
+          this.onConnect(this.nostr.pubkey, this.nostr);
+        }
+      this.nostr.fetchProfile().then(profile => {
+        this.updateProfileDisplay();
+        if (window.app?.refreshAccount) {
+            window.app.refreshAccount();
+          }
+        });
+      }, 1500);
+    } catch (err) {
+      statusEl.textContent = '❌ ' + err.message;
+      statusEl.style.color = 'var(--error, #ff4444)';
+    }
+  }
+
   showUserLoggedIn() {
     const userBtn = document.getElementById('user-menu-btn');
     const connectBtn = document.getElementById('user-menu-connect');
@@ -254,12 +418,24 @@ class UserMenu {
     if (userBtn) userBtn.style.display = 'flex';
     if (connectBtn) connectBtn.style.display = 'none';
     
-    const displayName = this.nostr.profile?.display_name || this.nostr.profile?.name;
     const shortNpub = this.nostr.npub ? `${this.nostr.npub.slice(0, 8)}...${this.nostr.npub.slice(-8)}` : '';
     
     if (npubEl) npubEl.textContent = shortNpub;
-    if (nameEl) nameEl.textContent = displayName || '(cargando nombre...)';
-    if (nameBtnEl) nameBtnEl.textContent = displayName || '(cargando nombre...)';
+    
+    if (this.nostr.profile) {
+      const displayName = this.nostr.profile.display_name || this.nostr.profile.name;
+      if (nameEl) nameEl.textContent = displayName || '(sin nombre)';
+      if (nameBtnEl) nameBtnEl.textContent = displayName || '(sin nombre)';
+    } else {
+      if (nameEl) {
+        nameEl.textContent = '(cargando...)';
+        nameEl.style.color = 'var(--text-muted)';
+      }
+      if (nameBtnEl) {
+        nameBtnEl.textContent = '(cargando...)';
+        nameBtnEl.style.color = 'var(--text-muted)';
+      }
+    }
   }
 
   async restoreSession() {
@@ -286,9 +462,15 @@ class UserMenu {
     
     const displayName = this.nostr.profile?.display_name || this.nostr.profile?.name;
     
-    if (nameEl) nameEl.textContent = displayName || '(cargando nombre...)';
+    if (nameEl) {
+      nameEl.textContent = displayName || '(sin nombre)';
+      nameEl.style.color = displayName ? '' : 'var(--text-muted)';
+    }
     if (npubEl) npubEl.textContent = this.nostr.npub ? `${this.nostr.npub.slice(0, 12)}...${this.nostr.npub.slice(-8)}` : '';
-    if (nameBtnEl) nameBtnEl.textContent = displayName || 'Usuario';
+    if (nameBtnEl) {
+      nameBtnEl.textContent = displayName || '(sin nombre)';
+      nameBtnEl.style.color = displayName ? '' : 'var(--text-muted)';
+    }
   }
 
   disconnect() {

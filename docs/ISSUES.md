@@ -117,40 +117,39 @@ Agregar ruta `#/p/{npub}` que muestre vista de usuario con sus cursos publicados
 
 ---
 
-### 🆕 9. Auth NIP-07 (Login con extensión de navegador)
-**Ubicación**: `src/components/NostrConnect.js`
+### ✅ 9. Auth NIP-07 (Login con extensión de navegador)
+**Ubicación**: `src/lib/NostrConnect.js`, `src/components/UserMenu.js`
 
-El login actual solo acepta nsec, inutilizable para usuarios no-técnicos.
-
-**Solución**:
-1. Detectar si existe `window.nostr` al cargar
-2. Agregar botón "Conectar con extensión"
-3. Usar `window.nostr.getPublicKey()` y `signEvent()`
-
----
-
-### 🆕 10. Auth NIP-46 Básico (Connection Request)
-**Ubicación**: `src/components/NostrConnect.js`
-
-Login via QR/bunker como alternativa a NIP-07.
-
-**Solución**:
-1. Generar connection token y publish a relay (kind:24133)
-2. Mostrar QR con URI de conexión
-3. Escuchar respuesta del bunker
-4. Obtener pubkey approveada
+Implementado:
+- Detectar `window.nostr` al cargar
+- Botón "Conectar con extensión"
+- Usar `window.nostr.getPublicKey()` y `signEvent()`
+- Detección dinámica de extensión
+- Session restore con verificación
 
 ---
 
-### 🆕 11. Auth NIP-46 Completo (Remote Signing)
-**Ubicación**: `src/components/NostrConnect.js`
+### ✅ 10. Auth NIP-46 Básico (Connection Request)
+**Ubicación**: `src/lib/NostrConnect.js`, `src/components/UserMenu.js`
 
-Firma de eventos delegateada al bunker remoto.
+Implementado:
+- UI: Input para bunker URL
+- Botón "Conectar con bunker"
+- Botón "Nostr Connect (QR)" con modal
+- Generación de QR con API externa
+- Espera de aprobación del bunker
 
-**Solución**:
-1. Establecer comunicación persistente con bunker
-2. Implementar `signEvent()` delegando al bunker
-3. Manejar reconnect, timeouts, errores
+---
+
+### ✅ 11. Auth NIP-46 Completo (Remote Signing)
+**Ubicación**: `src/lib/NostrConnect.js`
+
+Implementado:
+- Integración con `@nostr-dev-kit/ndk`
+- `NDKNip46Signer.bunker()` para conexión
+- `NDKNip46Signer.nostrconnect()` para QR
+- `signEvent()` delegando al signer
+- Session restore automático
 
 ---
 
@@ -192,3 +191,5 @@ NIP-17 → Esquema de mensajería (usa NIP-44 + NIP-59)
 - **Refactor NostrConnect**: Clase standalone en `src/lib/NostrConnect.js`
 - **Detección dinámica de extensión**: `checkNip07Extension()` para extensiones que cargan tarde
 - **Session restore con verificación**: Verifica pubkey con extensión al restaurar sesión
+- **Auth NIP-46**: Login con bunker (bunker://...) y Nostr Connect (QR)
+- **NIP-46 Remote Signing**: Integración con NDK, firma de eventos via signer

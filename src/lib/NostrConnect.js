@@ -1,5 +1,5 @@
 import { nip19 } from 'nostr-tools';
-import { getPublicKey, finalizeEvent } from 'nostr-tools/pure';
+import { getPublicKey, finalizeEvent, generateSecretKey } from 'nostr-tools/pure';
 import { DEBUG } from './constants.js';
 
 const RELAYS = [
@@ -17,6 +17,27 @@ const SESSION_KEYS = {
   npub: 'nostr_npub'
 };
 
+let NDK = null;
+let NDKNip46Signer = null;
+let NDKPrivateKeySigner = null;
+let ndkInstance = null;
+
+async function getNDK() {
+  if (!ndkInstance && typeof window !== 'undefined') {
+    try {
+      const ndkModule = await import('@nostr-dev-kit/ndk');
+      NDK = ndkModule.NDK;
+      NDKNip46Signer = ndkModule.NDKNip46Signer;
+      NDKPrivateKeySigner = ndkModule.NDKPrivateKeySigner;
+      ndkInstance = new NDK({ explicitRelayUrls: RELAYS });
+      ndkInstance.connect();
+    } catch (err) {
+      console.warn('NDK not available:', err);
+    }
+  }
+  return ndkInstance;
+}
+
 class NostrConnect {
   constructor() {
     this.pubkey = null;
@@ -24,6 +45,12 @@ class NostrConnect {
     this.sk = null;
     this.profile = null;
     this.nip07 = false;
+    this.authMethod = null;
+    this.signer = null;
+    this.ndk = null;
+    this.bunkerUrl = null;
+    this.nostrConnectUri = null;
+    this.clientSecret = null;
   }
 
   hasNip07() {
@@ -32,14 +59,17 @@ class NostrConnect {
 
   async connectNip07() {
     if (!this.hasNip07()) {
-      throw new Error('No se detectó extensión de Nostr. Instalá Alby, nos2x u otra extensión.');
+      throw new Error('No se detectï¿½ extensiï¿½n de Nostr. Instalï¿½ Alby, nos2x u otra extensiï¿½n.');
     }
 
     const pubkey = await window.nostr.getPublicKey();
     this.pubkey = pubkey;
     this.npub = nip19.npubEncode(pubkey);
     this.nip07 = true;
+    this.authMethod = 'nip07';
     this.sk = null;
+    this.signer = null;
+    this.profile = null;
 
     localStorage.setItem(SESSION_KEYS.pubkey, pubkey);
     localStorage.setItem(SESSION_KEYS.npub, this.npub);
@@ -58,6 +88,9 @@ class NostrConnect {
     this.pubkey = getPublicKey(this.sk);
     this.npub = nip19.npubEncode(this.pubkey);
     this.nip07 = false;
+    this.authMethod = 'nsec';
+    this.signer = null;
+    this.profile = null;
 
     localStorage.setItem(SESSION_KEYS.sk, Array.from(this.sk).join(','));
     localStorage.setItem(SESSION_KEYS.pubkey, this.pubkey);
@@ -65,6 +98,109 @@ class NostrConnect {
     localStorage.removeItem('nostr_method');
 
     return { pubkey: this.pubkey, npub: this.npub };
+  }
+
+  async connectBunker(bunkerUrl, clientSecret = null) {
+    this.ndk = await getNDK();
+    if (!this.ndk || !NDKNip46Signer) {
+      throw new Error('NDK no disponible');
+    }
+
+    const secret = clientSecret || this.generateClientSecret();
+    this.clientSecret = secret;
+    this.bunkerUrl = bunkerUrl;
+
+    try {
+      const bunkerSigner = NDKNip46Signer.bunker(this.ndk, bunkerUrl, secret);
+      
+      const user = await this.withTimeout(bunkerSigner.blockUntilReady(), 15000, 'Bunker connection timeout');
+      
+      this.signer = bunkerSigner;
+      this.pubkey = user.pubkey;
+      this.npub = user.npub;
+      this.authMethod = 'nip46';
+      this.profile = null;
+
+      localStorage.setItem(SESSION_KEYS.pubkey, this.pubkey);
+      localStorage.setItem(SESSION_KEYS.npub, this.npub);
+      localStorage.setItem('nostr_method', 'nip46');
+      localStorage.setItem('nostr_bunker_url', bunkerUrl);
+      localStorage.setItem('nostr_client_secret', secret);
+
+      return { pubkey: this.pubkey, npub: this.npub };
+    } catch (err) {
+      this.signer = null;
+      throw new Error('Error conectando al bunker: ' + err.message);
+    }
+  }
+
+  async startNostrConnect(relayUrl = 'wss://relay.nsec.app') {
+    this.ndk = await getNDK();
+    if (!this.ndk || !NDKNip46Signer || !NDKPrivateKeySigner) {
+      throw new Error('NDK no disponible');
+    }
+
+    const clientSk = generateSecretKey();
+    this.clientSecret = NDKPrivateKeySigner.generate().nsec;
+    
+    this.nostrConnectUri = `nostrconnect://${getPublicKey(this.sk || clientSk)}?relay=${encodeURIComponent(relayUrl)}&secret=${encodeURIComponent(this.clientSecret)}&name=NosTeach`;
+
+    return this.nostrConnectUri;
+  }
+
+  async waitForNostrConnectApproval(timeout = 30000) {
+    if (!this.ndk || !NDKNip46Signer) {
+      throw new Error('NDK no disponible');
+    }
+
+    const clientSk = this.clientSecret;
+    if (!clientSk) {
+      throw new Error('No se iniciï¿½ sesiï¿½n de Nostr Connect');
+    }
+
+    const relayUrl = 'wss://relay.nsec.app';
+    const nostrSigner = NDKNip46Signer.nostrconnect(this.ndk, relayUrl, clientSk, {
+      name: 'NosTeach',
+    });
+
+    try {
+      const user = await this.withTimeout(nostrSigner.blockUntilReady(), timeout, 'Nostr Connect timeout');
+      
+      this.signer = nostrSigner;
+      this.pubkey = user.pubkey;
+      this.npub = user.npub;
+      this.authMethod = 'nip46';
+
+      localStorage.setItem(SESSION_KEYS.pubkey, this.pubkey);
+      localStorage.setItem(SESSION_KEYS.npub, this.npub);
+      localStorage.setItem('nostr_method', 'nip46');
+      localStorage.setItem('nostr_client_secret', this.clientSecret);
+      localStorage.setItem('nostr_connect_relay', relayUrl);
+
+      return { pubkey: this.pubkey, npub: this.npub };
+    } catch (err) {
+      throw new Error('Error en Nostr Connect: ' + err.message);
+    }
+  }
+
+  generateClientSecret() {
+    const array = new Uint8Array(32);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(array);
+    } else {
+      for (let i = 0; i < 32; i++) {
+        array[i] = Math.floor(Math.random() * 256);
+      }
+    }
+    return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  withTimeout(promise, ms, errorMessage) {
+    let timeout;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeout = setTimeout(() => reject(new Error(errorMessage)), ms);
+    });
+    return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeout));
   }
 
   async restoreSession() {
@@ -89,6 +225,7 @@ class NostrConnect {
         this.pubkey = currentPubkey;
         this.npub = nip19.npubEncode(currentPubkey);
         this.nip07 = true;
+        this.authMethod = 'nip07';
 
         localStorage.setItem(SESSION_KEYS.pubkey, currentPubkey);
         localStorage.setItem(SESSION_KEYS.npub, this.npub);
@@ -99,12 +236,29 @@ class NostrConnect {
         this.clearSession();
         return null;
       }
+    } else if (savedMethod === 'nip46') {
+      const bunkerUrl = localStorage.getItem('nostr_bunker_url');
+      const clientSecret = localStorage.getItem('nostr_client_secret');
+      
+      if (bunkerUrl && clientSecret) {
+        try {
+          await this.connectBunker(bunkerUrl, clientSecret);
+          return { pubkey: this.pubkey, npub: this.npub };
+        } catch (err) {
+          console.error('Error restoring NIP-46 session:', err);
+          this.clearSession();
+          return null;
+        }
+      }
+      this.clearSession();
+      return null;
     } else if (savedSk && savedPubkey) {
       try {
         this.sk = new Uint8Array(savedSk.split(',').map(Number));
         this.pubkey = savedPubkey;
         this.npub = savedNpub || nip19.npubEncode(savedPubkey);
         this.nip07 = false;
+        this.authMethod = 'nsec';
 
         return { pubkey: this.pubkey, npub: this.npub };
       } catch (err) {
@@ -122,6 +276,12 @@ class NostrConnect {
     this.sk = null;
     this.profile = null;
     this.nip07 = false;
+    this.authMethod = null;
+    this.signer = null;
+    this.ndk = null;
+    this.bunkerUrl = null;
+    this.nostrConnectUri = null;
+    this.clientSecret = null;
     this.clearSession();
   }
 
@@ -130,6 +290,9 @@ class NostrConnect {
     localStorage.removeItem(SESSION_KEYS.pubkey);
     localStorage.removeItem(SESSION_KEYS.npub);
     localStorage.removeItem('nostr_method');
+    localStorage.removeItem('nostr_bunker_url');
+    localStorage.removeItem('nostr_client_secret');
+    localStorage.removeItem('nostr_connect_relay');
   }
 
   async query(filters) {
@@ -170,7 +333,6 @@ class NostrConnect {
             resolve(results);
           }
         } catch (e) {
-          // Ignore parse errors
         }
       };
 
@@ -210,7 +372,10 @@ class NostrConnect {
     };
 
     let signed;
-    if (this.nip07 && window.nostr && window.nostr.signEvent) {
+
+    if (this.authMethod === 'nip46' && this.signer) {
+      signed = await this.signer.sign(event);
+    } else if (this.nip07 && window.nostr && window.nostr.signEvent) {
       signed = await window.nostr.signEvent(event);
     } else {
       if (!this.sk) {
@@ -229,7 +394,7 @@ class NostrConnect {
     const successful = results.filter(r => r.success);
 
     if (successful.length === 0) {
-      throw new Error('No se pudo publicar a ningún relay');
+      throw new Error('No se pudo publicar a ningï¿½n relay');
     }
 
     return signed;

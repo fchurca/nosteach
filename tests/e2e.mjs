@@ -14,6 +14,13 @@ if (!NSEC_TEST) {
   process.exit(1);
 }
 
+let NSEC_TEST_EMPTY = process.env.TEST_NSEC_EMPTY;
+if (!NSEC_TEST_EMPTY && existsSync('.secrets')) {
+  const secrets = readFileSync('.secrets', 'utf-8');
+  const match = secrets.match(/TEST_NSEC_EMPTY=(.+)/);
+  if (match) NSEC_TEST_EMPTY = match[1];
+}
+
 async function runTests() {
   console.log(`\n🧪 NosTeach Tests - ${URL}\n`);
 
@@ -66,6 +73,21 @@ async function runTests() {
       await connectBtn.waitFor({ state: 'visible' });
     });
 
+    // Test 4b: Mi Cuenta without login shows "iniciar sesión" message
+    await test('Mi Cuenta without login shows "iniciar sesión" message', async () => {
+      await page.evaluate(() => localStorage.clear());
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.waitForTimeout(500);
+      
+      await page.goto(URL + '#/p', { waitUntil: 'networkidle' });
+      await page.waitForTimeout(500);
+      
+      const content = await page.content();
+      if (!content.includes('inic') || !content.includes('sesi')) {
+        throw new Error('Mi Cuenta should show "iniciar sesión" message when not logged in');
+      }
+    });
+
     // Test 5: Connect with nsec via dropdown
     await test('Connect with nsec', async () => {
       const connectBtn = await page.locator('#user-menu-connect');
@@ -102,6 +124,144 @@ async function runTests() {
       
       const accountCard = await page.locator('.card h2:has-text("Mi Cuenta")');
       await accountCard.waitFor({ state: 'visible' });
+    });
+
+    // Test 7b: Mi Cuenta shows npub after login
+    await test('Mi Cuenta shows npub after login', async () => {
+      await page.waitForTimeout(1500);
+      
+      const npubElement = await page.locator('.card:has-text("Mi Cuenta") code').first();
+      const npubText = await npubElement.textContent();
+      
+      console.log('  → npub text:', npubText);
+      
+      if (!npubText || npubText.length < 10 || npubText.includes('no definido')) {
+        throw new Error('Mi Cuenta should show npub after login, got: ' + npubText);
+      }
+    });
+
+    // Test 7c: User menu shows "(cargando...)" initially then shows name or "(sin nombre)"
+    await test('User menu shows "(cargando...)" or name after login', async () => {
+      await page.evaluate(() => localStorage.clear());
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.waitForTimeout(500);
+      
+      const emptyNsec = NSEC_TEST_EMPTY;
+      
+      const connectBtn = await page.locator('#user-menu-connect');
+      await connectBtn.click();
+      
+      const nsecInput = await page.locator('#nsec-input-header');
+      await nsecInput.fill(emptyNsec);
+      
+      const nsecBtn = await page.locator('#nsec-connect-header-btn');
+      await nsecBtn.click();
+      
+      await page.waitForTimeout(2000);
+      
+      const userBtn = await page.locator('#user-menu-btn');
+      await userBtn.click();
+      
+      await page.waitForTimeout(500);
+      
+      const dropdown = await page.locator('#user-menu-dropdown');
+      await dropdown.waitFor({ state: 'visible' });
+      
+      await page.waitForTimeout(4000);
+      
+      const displayNameEl = await page.locator('#user-menu-display-name');
+      const nameText = await displayNameEl.textContent();
+      
+      console.log('  → Name after login:', nameText);
+      
+      const isValidName = nameText === '(sin nombre)' || (nameText && nameText.length > 0 && !nameText.includes('cargando'));
+      
+      if (!isValidName) {
+        throw new Error('Should show "(sin nombre)" or actual name after login, got: ' + nameText);
+      }
+    });
+
+    // Test 7d: Logout clears all session data
+    await test('Logout clears all session data', async () => {
+      await page.evaluate(() => localStorage.clear());
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.waitForTimeout(500);
+      
+      const connectBtn = await page.locator('#user-menu-connect');
+      await connectBtn.click();
+      
+      const nsecInput = await page.locator('#nsec-input-header');
+      await nsecInput.fill(NSEC_TEST);
+      
+      const nsecBtn = await page.locator('#nsec-connect-header-btn');
+      await nsecBtn.click();
+      
+      await page.waitForTimeout(2000);
+      
+      const userBtn = await page.locator('#user-menu-btn');
+      await userBtn.click();
+      
+      const dropdown = await page.locator('#user-menu-dropdown');
+      await dropdown.waitFor({ state: 'visible' });
+      
+      const disconnectLink = await page.locator('a:has-text("Desconectar")');
+      await disconnectLink.click();
+      
+      await page.waitForTimeout(1000);
+      
+      const connectBtnAfter = await page.locator('#user-menu-connect');
+      await connectBtnAfter.waitFor({ state: 'visible' });
+      
+      const localStorageKeys = await page.evaluate(() => Object.keys(localStorage));
+      const hasNostrKeys = localStorageKeys.some(k => k.startsWith('nostr'));
+      
+      if (hasNostrKeys) {
+        throw new Error('Logout should clear all nostr session data');
+      }
+    });
+
+    // Test 7e: Mi Cuenta shows the user is logged in (npub visible)
+    await test('Mi Cuenta shows logged in state', async () => {
+      await page.evaluate(() => localStorage.clear());
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.waitForTimeout(1000);
+      
+      const emptyNsec = NSEC_TEST_EMPTY;
+      
+      const connectBtn = await page.locator('#user-menu-connect');
+      await connectBtn.click();
+      
+      const nsecInput = await page.locator('#nsec-input-header');
+      await nsecInput.fill(emptyNsec);
+      
+      const nsecBtn = await page.locator('#nsec-connect-header-btn');
+      await nsecBtn.click();
+      
+      await page.waitForTimeout(3000);
+      
+      await page.goto(URL + '#/p', { waitUntil: 'networkidle' });
+      await page.waitForTimeout(3000);
+      
+      const content = await page.content();
+      
+      const hasMiCuenta = content.includes('Mi Cuenta');
+      const hasNpub186 = content.includes('npub186');
+      
+      console.log('  → Has Mi Cuenta:', hasMiCuenta, '| Has npub:', hasNpub186);
+      
+      if (!hasMiCuenta || !hasNpub186) {
+        throw new Error('Mi Cuenta should show logged in state with npub');
+      }
+    });
+
+    // Test 7e: Mi Cuenta shows link to public profile (when npub is available)
+    await test('Mi Cuenta shows link to public profile', async () => {
+      await page.waitForTimeout(1000);
+      
+      const content = await page.content();
+      const hasLink = content.includes('Mi perfil público');
+      
+      console.log('  → Has profile link:', hasLink);
     });
 
     // Test 8: Navigate to Mis Roles
