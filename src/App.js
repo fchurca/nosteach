@@ -508,6 +508,12 @@ class App {
                 <code style="font-size: 0.85em; font-family: monospace;">${pubkey || '<span style="color: var(--text-muted);">(no definido)</span>'}</code>
               </div>
               <div style="margin-bottom: 10px;">
+                <strong>Protocolo de autenticación:</strong> 
+                ${this.nostr?.authMethod === 'nip46' ? 'NIP-46 (Remoto)' : 
+                  this.nostr?.authMethod === 'nip07' ? 'NIP-07 (Extensión)' : 
+                  'Clave privada local'}
+              </div>
+              <div style="margin-bottom: 10px;">
                 <strong>Roles activos:</strong>
                 <span style="color: #00ff9d;">${Object.entries(this.roles).filter(([_, v]) => v).map(([k]) => k).join(', ') || 'Ninguno'}</span>
               </div>

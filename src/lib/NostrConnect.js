@@ -1,6 +1,8 @@
 import { nip19 } from 'nostr-tools';
 import { getPublicKey, finalizeEvent, generateSecretKey } from 'nostr-tools/pure';
-import { DEBUG } from './constants.js';
+import { BunkerSigner, parseBunkerInput } from 'nostr-tools/nip46';
+import { SimplePool } from 'nostr-tools/pool';
+import { DEBUG, DEFAULT_RELAYS } from './constants.js';
 
 const RELAYS = [
   'wss://nos.lol',
@@ -117,98 +119,110 @@ class NostrConnect {
   }
 
   async connectBunker(bunkerUrl, clientSecret = null) {
-    this.ndk = await getNDK();
-    if (!this.ndk || !NDKNip46Signer) {
-      throw new Error('NDK no disponible');
+    // Manual parse of bunker URL
+    let pubkey, relays = [], secret = null;
+    
+    try {
+      const url = new URL(bunkerUrl);
+      pubkey = url.hostname || url.pathname.replace(/^\/\//, '');
+      relays = url.searchParams.getAll('relay');
+      secret = url.searchParams.get('secret');
+    } catch (e) {
+      // Try parseBunkerInput as fallback
+      const bunkerPointer = await parseBunkerInput(bunkerUrl);
+      if (!bunkerPointer) {
+        throw new Error('URL de bunker inválida');
+      }
+      pubkey = bunkerPointer.pubkey;
+      relays = bunkerPointer.relays || [];
+      secret = bunkerPointer.secret;
     }
 
-    const secret = clientSecret || this.generateClientSecret();
-    this.clientSecret = secret;
-    this.bunkerUrl = bunkerUrl;
-
-    try {
-      const bunkerSigner = NDKNip46Signer.bunker(this.ndk, bunkerUrl, secret);
-      
-      const user = await this.withTimeout(bunkerSigner.blockUntilReady(), 15000, 'Bunker connection timeout');
-      
-      this.signer = bunkerSigner;
-      this.pubkey = user.pubkey;
-      this.npub = user.npub;
-      this.authMethod = 'nip46';
-      this.profile = null;
-
-      localStorage.setItem(SESSION_KEYS.pubkey, this.pubkey);
-      localStorage.setItem(SESSION_KEYS.npub, this.npub);
-      localStorage.setItem('nostr_method', 'nip46');
-      localStorage.setItem('nostr_bunker_url', bunkerUrl);
-      localStorage.setItem('nostr_client_secret', secret);
-
-      return { pubkey: this.pubkey, npub: this.npub };
-    } catch (err) {
-      this.signer = null;
-      throw new Error('Error conectando al bunker: ' + err.message);
+    // Use only relays from bunker URL - dedupe
+    relays = [...new Set(relays)];
+    
+    if (relays.length === 0) {
+      throw new Error('No hay relays en la URL del bunker');
     }
-  }
 
-  async startNostrConnect(relayUrl = 'wss://relay.nsec.app') {
+    const localSecret = generateSecretKey();
+    const pool = new SimplePool();
+    
+    const bunkerPointer = { pubkey, relays, secret };
+    const bunkerSigner = BunkerSigner.fromBunker(localSecret, bunkerPointer, { pool });
+    
     try {
-      this.ndk = await getNDK();
-      
-      if (!this.ndk) {
-        throw new Error('No se pudo inicializar NDK');
-      }
-      if (!NDKNip46Signer) {
-        throw new Error('NDKNip46Signer no disponible');
-      }
-      if (!NDKPrivateKeySigner) {
-        throw new Error('NDKPrivateKeySigner no disponible');
-      }
-
-      const clientSigner = NDKPrivateKeySigner.generate();
-      this.clientSecret = clientSigner.nsec;
-      const clientPubkey = clientSigner.publicKey;
-      
-      this.nostrConnectUri = `nostrconnect://${clientPubkey}?relay=${encodeURIComponent(relayUrl)}&secret=${encodeURIComponent(this.clientSecret)}&name=NosTeach`;
-
-      return this.nostrConnectUri;
+      await Promise.race([
+        bunkerSigner.connect(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 30000))
+      ]);
     } catch (err) {
-      console.error('[NostrConnect] startNostrConnect error:', err);
+      if (err.message.includes('timeout')) {
+        throw new Error('Tiempo de espera agotado. ¿Aprobaste la conexión en tu bunker?');
+      }
       throw err;
     }
+    
+    this.signer = bunkerSigner;
+    this.pubkey = await bunkerSigner.getPublicKey();
+    this.npub = nip19.npubEncode(this.pubkey);
+    this.authMethod = 'nip46';
+    this.profile = null;
+
+    localStorage.setItem(SESSION_KEYS.pubkey, this.pubkey);
+    localStorage.setItem(SESSION_KEYS.npub, this.npub);
+    localStorage.setItem('nostr_method', 'nip46');
+    localStorage.setItem('nostr_bunker_url', bunkerUrl);
+    localStorage.setItem('nostr_client_secret', clientSecret);
+
+    return { pubkey: this.pubkey, npub: this.npub };
+  }
+
+  async startNostrConnect() {
+    const localSecret = generateSecretKey();
+    const clientPubkey = getPublicKey(localSecret);
+    const secretHex = Array.from(localSecret).map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    let uri = `nostrconnect://${clientPubkey}?secret=${secretHex}&name=NosTeach`;
+    for (const relay of DEFAULT_RELAYS) {
+      uri += `&relay=${encodeURIComponent(relay)}`;
+    }
+    
+    this.nostrConnectUri = uri;
+    this.clientSecret = secretHex;
+    
+    return this.nostrConnectUri;
   }
 
   async waitForNostrConnectApproval(timeout = 30000) {
-    if (!this.ndk) {
-      this.ndk = await getNDK();
-    }
-    
-    if (!this.ndk || !NDKNip46Signer) {
-      throw new Error('NDK no disponible');
-    }
-
-    const clientSecret = this.clientSecret;
-    if (!clientSecret) {
+    const uri = this.nostrConnectUri;
+    if (!uri) {
       throw new Error('No se inició sesión de Nostr Connect');
     }
 
-    const relayUrl = 'wss://relay.nsec.app';
-    const nostrSigner = NDKNip46Signer.nostrconnect(this.ndk, relayUrl, clientSecret, {
-      name: 'NosTeach',
-    });
+    // Generate same local key that was used to create the URI
+    const secretHex = this.clientSecret;
+    const secretBytes = new Uint8Array(secretHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    const pool = new SimplePool();
+    
+    // Parse the URI to get client pubkey and relays
+    const url = new URL(uri);
+    const clientPubkey = url.pathname.replace(/^\/\//, '');
+    const relays = url.searchParams.getAll('relay');
+    
+    // Use nostr-tools BunkerSigner.fromURI
+    const signer = await BunkerSigner.fromURI(secretBytes, uri, { pool });
 
     try {
-      const user = await this.withTimeout(nostrSigner.blockUntilReady(), timeout, 'Tiempo de espera agotado');
-      
-      this.signer = nostrSigner;
-      this.pubkey = user.pubkey;
-      this.npub = user.npub;
+      this.signer = signer;
+      this.pubkey = await signer.getPublicKey();
+      this.npub = nip19.npubEncode(this.pubkey);
       this.authMethod = 'nip46';
 
       localStorage.setItem(SESSION_KEYS.pubkey, this.pubkey);
       localStorage.setItem(SESSION_KEYS.npub, this.npub);
       localStorage.setItem('nostr_method', 'nip46');
       localStorage.setItem('nostr_client_secret', this.clientSecret);
-      localStorage.setItem('nostr_connect_relay', relayUrl);
 
       return { pubkey: this.pubkey, npub: this.npub };
     } catch (err) {
@@ -226,6 +240,22 @@ class NostrConnect {
       }
     }
     return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async findWorkingRelay(relays) {
+    const testRelay = (relay) => {
+      return new Promise((resolve) => {
+        try {
+          const ws = new WebSocket(relay);
+          const timer = setTimeout(() => { ws.close(); resolve(false); }, 3000);
+          ws.onopen = () => { clearTimeout(timer); ws.close(); resolve(relay); };
+          ws.onerror = () => { clearTimeout(timer); resolve(false); };
+        } catch { resolve(false); }
+      });
+    };
+    
+    const results = await Promise.all(relays.map(r => testRelay(r)));
+    return results.find(r => r !== false) || null;
   }
 
   withTimeout(promise, ms, errorMessage) {

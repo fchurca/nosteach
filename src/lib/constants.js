@@ -1,9 +1,11 @@
 export const DEFAULT_RELAYS = [
   'wss://nos.lol',
+  'wss://relay.damus.io',
   'wss://purplepag.es',
   'wss://relay.snort.social',
   'wss://inbox.nostr.wine',
-  'wss://filter.nostr.wine'
+  'wss://filter.nostr.wine',
+  'wss://relay.nsec.app'
 ];
 
 const params = new URLSearchParams(window.location.search);
