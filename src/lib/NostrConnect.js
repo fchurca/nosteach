@@ -69,6 +69,57 @@ class NostrConnect {
     this.bunkerUrl = null;
     this.nostrConnectUri = null;
     this.clientSecret = null;
+    this.onLogout = null;
+    this.onLogin = null;
+    this._isTabSync = false;
+
+    // Sync across tabs
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        // Only handle events from OTHER tabs (newValue exists)
+        if (!e.newValue) return;
+        
+        console.log('[NostrConnect] Storage event from another tab:', e.key, 'newValue:', e.newValue);
+        if (e.key === SESSION_KEYS.pubkey) {
+          if (e.newValue) {
+            // Login in another tab - restore session
+            console.log('[NostrConnect] Login detected in another tab, pubkey:', e.newValue, 'this.pubkey:', this.pubkey);
+            if (!this.pubkey || this.pubkey !== e.newValue) {
+              this._isTabSync = true; // Mark as tab sync to avoid loops
+              this.restoreSession().then((result) => {
+                console.log('[NostrConnect] restoreSession result:', result, 'pubkey:', this.pubkey, 'onLogin:', !!this.onLogin);
+                if (result && this.pubkey && this.onLogin) {
+                  this.onLogin(this.pubkey, this);
+                }
+                this._isTabSync = false;
+              }).catch((err) => {
+                console.error('[NostrConnect] restoreSession error:', err);
+                this._isTabSync = false;
+              });
+            }
+          } else {
+            // Logout in another tab
+            console.log('[NostrConnect] Logout detected in another tab, current pubkey:', this.pubkey);
+            if (this.pubkey) {
+              const npub = this.npub;
+              this.disconnect();
+              console.log('[NostrConnect] Disconnected, calling onLogout:', !!this.onLogout);
+              if (this.onLogout) {
+                this.onLogout(npub);
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  get currentPubkey() {
+    return this.pubkey || localStorage.getItem(SESSION_KEYS.pubkey);
+  }
+
+  get currentNpub() {
+    return this.npub || localStorage.getItem(SESSION_KEYS.npub);
   }
 
   hasNip07() {

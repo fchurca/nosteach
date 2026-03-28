@@ -223,11 +223,18 @@ class App {
   }
 
   onNostrConnect(pubkey, nostrInstance) {
+    console.log('[App] onNostrConnect called, pubkey:', pubkey, 'isTabSync:', nostrInstance?._isTabSync);
     this.pubkey = pubkey;
     this.nostr = nostrInstance;
     if (DEBUG) console.log('Nostr conectado:', pubkey);
     this.loadRoles();
-    this.refreshCurrentView();
+    
+    // Only reload if login came from another tab (sync)
+    if (nostrInstance?._isTabSync) {
+      window.location.reload();
+    } else {
+      this.refreshCurrentView();
+    }
   }
 
   refreshAccount() {
@@ -253,7 +260,7 @@ class App {
     if (DEBUG) console.log('Sesión cerrada. reconectado en modo lectura. npub:', npub);
     
     // Si estaba en Mi Cuenta (#/p), ir a su perfil público
-    const hash = window.location.hash;
+    let hash = window.location.hash;
     console.log('[App] onNostrDisconnect, hash:', hash, 'npub:', npub);
     if (hash.startsWith('#/p') && !hash.startsWith('#/p/')) {
       if (npub) {
@@ -261,7 +268,13 @@ class App {
       } else {
         window.location.hash = '#/';
       }
+    } else if (!hash || hash === '#/' || hash === '#' || hash === '#/c') {
+      // On home or courses - reload to re-fetch with read-only mode
+      window.location.reload();
     }
+    
+    // Always refresh current view when logout from another tab
+    this.refreshCurrentView();
   }
 
   onRolesChange(roles) {
@@ -825,7 +838,7 @@ class App {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
 
-    const myPubkey = this.pubkey || localStorage.getItem('nostr_pubkey');
+    const myPubkey = this.pubkey || window.nostr?.currentPubkey;
     
     if (!myPubkey) {
       contentArea.innerHTML = `

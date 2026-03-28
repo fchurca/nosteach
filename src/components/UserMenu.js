@@ -10,6 +10,22 @@ class UserMenu {
     this.nostr = new NostrConnect();
     this.isOpen = false;
     this._nip07HandlerAttached = false;
+    
+    // Expose globally for other components
+    window.nostr = this.nostr;
+    
+    // Setup tab sync callbacks
+    this.nostr.onLogout = (npub) => {
+      if (this.onDisconnect) {
+        this.onDisconnect(npub);
+      }
+    };
+    this.nostr.onLogin = (pubkey, nostr) => {
+      if (this.onConnect) {
+        this.onConnect(pubkey, nostr);
+      }
+    };
+    
     this.render();
     this.checkNip07Extension();
     this.restoreSession();
@@ -532,8 +548,7 @@ class UserMenu {
   }
 
   disconnect() {
-    // Get npub BEFORE clearing session
-    const npub = this.nostr?.npub || localStorage.getItem('nostr_npub');
+    const npub = this.nostr?.currentNpub;
     console.log('[UserMenu] Disconnect, npub:', npub);
     this.nostr.disconnect();
     this.closeDropdown();

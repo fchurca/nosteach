@@ -1,8 +1,12 @@
 # Changelog - NosTeach
 
-## 2026-03-28 (NIP-46 + UX + Login Unificado)
+## 2026-03-28 (NIP-46 + UX + Login Unificado + Tab Sync)
 
 ### Added
+- **Multi-tab sync**: Sincronización de login/logout entre pestañas del navegador
+- **Tab sync flag**: _isTabSync para prevenir loops infinitos de reload
+- **currentPubkey/currentNpub**: Getters en NostrConnect para acceder sesión
+- **window.nostr global**: Expuesto para que componentes accedan a la sesión
 - **NIP-46 support**: Login con bunker (bunker://...) y Nostr Connect (QR)
 - **NIP-46 Remote Signing**: Integración con @nostr-dev-kit/ndk
 - **Test suite NIP-46**: tests/nip46.mjs con 6 tests
@@ -12,6 +16,7 @@
 - **QR countdown**: Visual de 120s con retry automático al vencer, NIP46_TIMEOUT centralizado
 
 ### Fixed
+- **Infinite reload loop**: Tab sync ahora usa _isTabSync para evitar reload infinito
 - **NDK import**: Usar `ndkModule.default || ndkModule.NDK**
 - **Logout**: Limpia todos los datos de sesión
 - **Modal QR**: Cierra con ESC

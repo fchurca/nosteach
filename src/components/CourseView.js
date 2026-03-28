@@ -40,7 +40,7 @@ class CourseView {
     const precioText = precio === 0 ? 'Gratis' : `${precio} sats`;
     const modulos = content.modulos || [];
     const preguntas = content.evaluacion?.preguntas || [];
-    const isTeacher = this.course.pubkey === (localStorage.getItem('nostr_pubkey'));
+    const isTeacher = this.course.pubkey === window.app?.nostr?.currentPubkey;
     const showExamButton = this.roles.student || isTeacher;
 
     this.container.innerHTML = `
@@ -280,7 +280,7 @@ class CourseView {
       ? JSON.parse(this.course.content) 
       : this.course.content;
     const preguntas = content.evaluacion?.preguntas || [];
-    const isTeacher = this.course.pubkey === localStorage.getItem('nostr_pubkey');
+    const isTeacher = this.course.pubkey === window.app?.nostr?.currentPubkey;
 
     if (isTeacher) {
       this.viewResponses();
