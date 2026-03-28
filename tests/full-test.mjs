@@ -82,29 +82,29 @@ async function runFullTest() {
     await test('Click Connect shows login form', async () => {
       await page.locator('#user-menu-connect').click();
       await page.waitForTimeout(300);
-      const input = await page.locator('#nsec-input-header').isVisible();
+      const input = await page.locator('#login-unified-input').isVisible();
       if (!input) throw new Error('Login form not shown');
     });
 
     await test('Invalid nsec shows error', async () => {
-      await page.locator('#nsec-input-header').fill('invalid');
-      await page.locator('#nsec-connect-header-btn').click();
+      await page.locator('#login-unified-input').fill('invalid');
+      await page.locator('#connect-unified-btn').click();
       await page.waitForTimeout(500);
       const error = await page.locator('#login-error').textContent();
       if (!error.includes('nsec1')) throw new Error('No nsec validation error');
     });
 
     await test('Empty nsec shows error', async () => {
-      await page.locator('#nsec-input-header').fill('');
-      await page.locator('#nsec-connect-header-btn').click();
+      await page.locator('#login-unified-input').fill('');
+      await page.locator('#connect-unified-btn').click();
       await page.waitForTimeout(500);
       const error = await page.locator('#login-error').textContent();
       if (!error) throw new Error('No empty input error');
     });
 
     await test('Valid nsec connects', async () => {
-      await page.locator('#nsec-input-header').fill(NSEC_TEST);
-      await page.locator('#nsec-connect-header-btn').click();
+      await page.locator('#login-unified-input').fill(NSEC_TEST);
+      await page.locator('#connect-unified-btn').click();
       await page.waitForTimeout(2500);
       const userBtn = await page.locator('#user-menu-btn').isVisible();
       if (!userBtn) throw new Error('Login failed');
@@ -156,8 +156,8 @@ async function runFullTest() {
     await test('Login persists after refresh', async () => {
       await page.locator('#user-menu-connect').click();
       await page.waitForTimeout(300);
-      await page.locator('#nsec-input-header').fill(NSEC_TEST);
-      await page.locator('#nsec-connect-header-btn').click();
+      await page.locator('#login-unified-input').fill(NSEC_TEST);
+      await page.locator('#connect-unified-btn').click();
       await page.waitForTimeout(2000);
       
       await page.reload({ waitUntil: 'networkidle' });

@@ -47,10 +47,10 @@ async function runTests() {
       const connectBtn = await page.locator('#user-menu-connect');
       await connectBtn.click();
       
-      const input = await page.locator('#nsec-input-header');
+      const input = await page.locator('#login-unified-input');
       await input.fill(NSEC_TEST);
       
-      const btn = await page.locator('#nsec-connect-header-btn');
+      const btn = await page.locator('#connect-unified-btn');
       await btn.click();
       
       await page.waitForTimeout(2000);

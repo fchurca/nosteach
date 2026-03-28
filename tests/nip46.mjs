@@ -62,8 +62,8 @@ async function runTests() {
       const loginPanel = await page.locator('#user-menu-login');
       await loginPanel.waitFor({ state: 'visible' });
       
-      const nsecInput = await page.locator('#nsec-input-header');
-      const nsecBtn = await page.locator('#nsec-connect-header-btn');
+      const nsecInput = await page.locator('#login-unified-input');
+      const nsecBtn = await page.locator('#connect-unified-btn');
       const nip07Btn = await page.locator('#nip07-connect-header-btn');
       
       const nsecExists = await nsecInput.count() > 0;
@@ -84,15 +84,13 @@ async function runTests() {
       const loginPanel = await page.locator('#user-menu-login');
       await loginPanel.waitFor({ state: 'visible' });
       
-      const bunkerInput = await page.locator('#bunker-url-input');
-      const bunkerBtn = await page.locator('#bunker-connect-btn');
+      const unifiedInput = await page.locator('#login-unified-input');
       const nostrConnectBtn = await page.locator('#nostrconnect-btn');
       
-      const bunkerInputExists = await bunkerInput.count() > 0;
-      const bunkerBtnExists = await bunkerBtn.count() > 0;
+      const unifiedInputExists = await unifiedInput.count() > 0;
       const ncBtnExists = await nostrConnectBtn.count() > 0;
       
-      if (!bunkerInputExists || !bunkerBtnExists || !ncBtnExists) {
+      if (!unifiedInputExists || !ncBtnExists) {
         throw new Error('Bunker UI elements missing');
       }
     });
@@ -133,10 +131,10 @@ async function runTests() {
       const loginPanel = await page.locator('#user-menu-login');
       await loginPanel.waitFor({ state: 'visible' });
       
-      const nsecInput = await page.locator('#nsec-input-header');
+      const nsecInput = await page.locator('#login-unified-input');
       await nsecInput.fill(NSEC_TEST);
       
-      const nsecBtn = await page.locator('#nsec-connect-header-btn');
+      const nsecBtn = await page.locator('#connect-unified-btn');
       await nsecBtn.click();
       
       await page.waitForTimeout(2000);
@@ -154,10 +152,10 @@ async function runTests() {
       const loginPanel = await page.locator('#user-menu-login');
       await loginPanel.waitFor({ state: 'visible' });
       
-      const nsecInput = await page.locator('#nsec-input-header');
+      const nsecInput = await page.locator('#login-unified-input');
       await nsecInput.fill(NSEC_TEST);
       
-      const nsecBtn = await page.locator('#nsec-connect-header-btn');
+      const nsecBtn = await page.locator('#connect-unified-btn');
       await nsecBtn.click();
       
       await page.waitForTimeout(2000);
@@ -182,10 +180,10 @@ async function runTests() {
       const loginPanel = await page.locator('#user-menu-login');
       await loginPanel.waitFor({ state: 'visible' });
       
-      const nsecInput = await page.locator('#nsec-input-header');
+      const nsecInput = await page.locator('#login-unified-input');
       await nsecInput.fill(NSEC_TEST);
       
-      const nsecBtn = await page.locator('#nsec-connect-header-btn');
+      const nsecBtn = await page.locator('#connect-unified-btn');
       await nsecBtn.click();
       
       await page.waitForTimeout(2000);

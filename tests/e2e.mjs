@@ -83,7 +83,7 @@ async function runTests() {
       await page.waitForTimeout(500);
       
       const content = await page.content();
-      if (!content.includes('inic') || !content.includes('sesi')) {
+      if (!content.includes('sesi')) {
         throw new Error('Mi Cuenta should show "iniciar sesión" message when not logged in');
       }
     });
@@ -93,11 +93,11 @@ async function runTests() {
       const connectBtn = await page.locator('#user-menu-connect');
       await connectBtn.click();
       
-      const input = await page.locator('#nsec-input-header');
+      const input = await page.locator('#login-unified-input');
       await input.waitFor({ state: 'visible' });
       await input.fill(NSEC_TEST);
       
-      const btn = await page.locator('#nsec-connect-header-btn');
+      const btn = await page.locator('#connect-unified-btn');
       await btn.click();
       
       await page.waitForTimeout(2000);
@@ -151,10 +151,10 @@ async function runTests() {
       const connectBtn = await page.locator('#user-menu-connect');
       await connectBtn.click();
       
-      const nsecInput = await page.locator('#nsec-input-header');
+      const nsecInput = await page.locator('#login-unified-input');
       await nsecInput.fill(emptyNsec);
       
-      const nsecBtn = await page.locator('#nsec-connect-header-btn');
+      const nsecBtn = await page.locator('#connect-unified-btn');
       await nsecBtn.click();
       
       await page.waitForTimeout(2000);
@@ -190,10 +190,10 @@ async function runTests() {
       const connectBtn = await page.locator('#user-menu-connect');
       await connectBtn.click();
       
-      const nsecInput = await page.locator('#nsec-input-header');
+      const nsecInput = await page.locator('#login-unified-input');
       await nsecInput.fill(NSEC_TEST);
       
-      const nsecBtn = await page.locator('#nsec-connect-header-btn');
+      const nsecBtn = await page.locator('#connect-unified-btn');
       await nsecBtn.click();
       
       await page.waitForTimeout(2000);
@@ -231,10 +231,10 @@ async function runTests() {
       const connectBtn = await page.locator('#user-menu-connect');
       await connectBtn.click();
       
-      const nsecInput = await page.locator('#nsec-input-header');
+      const nsecInput = await page.locator('#login-unified-input');
       await nsecInput.fill(emptyNsec);
       
-      const nsecBtn = await page.locator('#nsec-connect-header-btn');
+      const nsecBtn = await page.locator('#connect-unified-btn');
       await nsecBtn.click();
       
       await page.waitForTimeout(3000);

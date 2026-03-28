@@ -1,6 +1,6 @@
 # Changelog - NosTeach
 
-## 2026-03-28 (NIP-46 + UX)
+## 2026-03-28 (NIP-46 + UX + Login Unificado)
 
 ### Added
 - **NIP-46 support**: Login con bunker (bunker://...) y Nostr Connect (QR)
@@ -8,6 +8,8 @@
 - **Test suite NIP-46**: tests/nip46.mjs con 6 tests
 - **Mi Cuenta UX**: Skeleton de carga, "(no definido)" para campos vacíos
 - **UserMenu estados**: "(cargando...)" y "(sin nombre)" en gris
+- **Login unificado**: Input único para nsec/bunker con detección automática por prefijo
+- **QR countdown**: Visual de 120s con retry automático al vencer, NIP46_TIMEOUT centralizado
 
 ### Fixed
 - **NDK import**: Usar `ndkModule.default || ndkModule.NDK`

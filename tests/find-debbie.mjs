@@ -31,8 +31,8 @@ async function run() {
   console.log('1. Login con debbie...');
   await page.locator('#user-menu-connect').click();
   await page.waitForTimeout(500);
-  await page.locator('#nsec-input-header').fill(NSEC_TEST);
-  await page.locator('#nsec-connect-header-btn').click();
+  await page.locator('#login-unified-input').fill(NSEC_TEST);
+  await page.locator('#connect-unified-btn').click();
   await page.waitForTimeout(3000);
   
   // Ver Mi Cuenta para ver lud16

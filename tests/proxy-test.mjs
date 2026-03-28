@@ -26,8 +26,8 @@ async function testInvoiceProxy() {
   await page.goto(URL, { waitUntil: 'networkidle', timeout: 15000 });
   await page.waitForTimeout(2000);
   await page.click('#user-menu-connect');
-  await page.fill('#nsec-input-header', NSEC);
-  await page.click('#nsec-connect-header-btn');
+  await page.fill('#login-unified-input', NSEC);
+  await page.click('#connect-unified-btn');
   await page.waitForTimeout(3000);
   
   console.log('2. Setting roles...');

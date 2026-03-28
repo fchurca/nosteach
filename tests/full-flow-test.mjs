@@ -66,8 +66,8 @@ async function runTest() {
     console.log('2. Login...');
     await page.locator('#user-menu-connect, #nsec-connect-btn, .btn-connect-header').first().click();
     await page.waitForTimeout(1000);
-    await page.locator('#nsec-input, #nsec-input-header').first().fill(NSEC_TEST);
-    await page.locator('#nsec-connect-btn, #nsec-connect-header-btn').first().click();
+    await page.locator('#nsec-input, #login-unified-input').first().fill(NSEC_TEST);
+    await page.locator('#nsec-connect-btn, #connect-unified-btn').first().click();
     await page.waitForTimeout(5000);
 
     console.log('3. Activar rol sponsor...');

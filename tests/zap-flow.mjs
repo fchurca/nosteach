@@ -37,8 +37,8 @@ async function runZapFlowTests() {
 
     await test('2. Login as teacher', async () => {
       await page.click('#user-menu-connect');
-      await page.fill('#nsec-input-header', NSEC_TEST);
-      await page.click('#nsec-connect-header-btn');
+      await page.fill('#login-unified-input', NSEC_TEST);
+      await page.click('#connect-unified-btn');
       await page.waitForTimeout(3000);
       // Force set teacher role in localStorage
       await page.evaluate(() => {

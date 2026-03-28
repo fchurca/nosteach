@@ -91,32 +91,26 @@ class UserMenu {
         <div id="user-menu-login" class="user-menu-login" style="display: none;">
           <div style="background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid rgba(255,255,255,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <strong>Conectar con tu clave Nostr</strong>
+              <strong>Conectar tu cuenta Nostr</strong>
               <button id="login-close-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;" aria-label="Cerrar">×</button>
             </div>
             ${this.nostr.hasNip07() ? `
-              <button id="nip07-connect-header-btn" class="btn-primary" style="margin-bottom: 15px; width: 100%;">
+              <button id="nip07-connect-header-btn" class="btn-primary" style="width: 100%;">
                 ⚡ Conectar con extensión (Alby, nos2x...)
               </button>
               <div style="text-align: center; margin: 10px 0; color: var(--text-muted);">— o —</div>
             ` : `
-              <button id="nip07-connect-header-btn" class="btn-secondary" style="margin-bottom: 15px; width: 100%; opacity: 0.6; cursor: not-allowed;" disabled title="Instalá una extensión como Alby o nos2x para usar NIP-07">
+              <button id="nip07-connect-header-btn" class="btn-secondary" style="width: 100%; opacity: 0.6; cursor: not-allowed;" disabled title="Instalá una extensión como Alby o nos2x para usar NIP-07">
                 ⚡ Conectar con extensión (no detectada)
               </button>
               <div style="text-align: center; margin: 10px 0; color: var(--text-muted);">— o —</div>
             `}
-            <label for="nsec-input-header" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: var(--text-secondary);">Tu clave privada (nsec)</label>
-            <input type="password" id="nsec-input-header" placeholder="nsec1..." style="width: 100%; margin-bottom: 8px;" aria-describedby="nsec-help">
-            <small id="nsec-help" style="display: block; margin-bottom: 8px; font-size: 0.8rem; color: var(--text-muted);">Nunca se comparte - se usa solo para iniciar sesión localmente</small>
+            <input type="password" id="login-unified-input" placeholder="nsec1... / bunker://..." style="width: 100%; margin-bottom: 8px;" autocomplete="off">
             <div id="login-error" style="color: var(--error); font-size: 0.85rem; margin-bottom: 8px; display: none;"></div>
-            <button id="nsec-connect-header-btn" style="width: 100%;">Conectar</button>
+            <button id="connect-unified-btn" style="width: 100%;">Conectar con clave</button>
             
-            <div id="nip46-section" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-              <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">— o conectar con bunker —</div>
-              <input type="text" id="bunker-url-input" placeholder="bunker://..." style="width: 100%; margin-bottom: 8px;">
-              <button id="bunker-connect-btn" style="width: 100%; margin-bottom: 8px;">🏰 Conectar con bunker</button>
-              
-              <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">— o —</div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.1);">
+              <div style="text-align: center; margin: 10px 0; color: var(--text-muted);">— o —</div>
               <button id="nostrconnect-btn" style="width: 100%;">🔗 Nostr Connect (QR)</button>
             </div>
           </div>
@@ -131,8 +125,8 @@ class UserMenu {
     const userBtn = document.getElementById('user-menu-btn');
     const connectBtn = document.getElementById('user-menu-connect');
     const closeBtn = document.getElementById('login-close-btn');
-    const connectHeaderBtn = document.getElementById('nsec-connect-header-btn');
-    const nsecInput = document.getElementById('nsec-input-header');
+    const unifiedBtn = document.getElementById('connect-unified-btn');
+    const unifiedInput = document.getElementById('login-unified-input');
 
     if (userBtn) {
       userBtn.addEventListener('click', (e) => {
@@ -155,31 +149,19 @@ class UserMenu {
       });
     }
 
-    if (connectHeaderBtn) {
-      connectHeaderBtn.addEventListener('click', () => this.handleConnect());
+    if (unifiedBtn) {
+      unifiedBtn.addEventListener('click', () => this.handleConnect());
+    }
+
+    if (unifiedInput) {
+      unifiedInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') this.handleConnect();
+      });
     }
 
     const nip07Btn = document.getElementById('nip07-connect-header-btn');
     if (nip07Btn) {
       nip07Btn.addEventListener('click', () => this.handleNip07Connect());
-    }
-
-    if (nsecInput) {
-      nsecInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') this.handleConnect();
-      });
-    }
-
-    const bunkerBtn = document.getElementById('bunker-connect-btn');
-    if (bunkerBtn) {
-      bunkerBtn.addEventListener('click', () => this.handleBunkerConnect());
-    }
-
-    const bunkerInput = document.getElementById('bunker-url-input');
-    if (bunkerInput) {
-      bunkerInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') this.handleBunkerConnect();
-      });
     }
 
     const nostrConnectBtn = document.getElementById('nostrconnect-btn');
@@ -222,7 +204,7 @@ class UserMenu {
       const isVisible = loginPanel.style.display === 'block';
       loginPanel.style.display = isVisible ? 'none' : 'block';
       if (!isVisible) {
-        document.getElementById('nsec-input-header')?.focus();
+        document.getElementById('login-unified-input')?.focus();
       }
     }
   }
@@ -233,17 +215,24 @@ class UserMenu {
   }
 
   async handleConnect() {
-    const nsecInput = document.getElementById('nsec-input-header');
+    const unifiedInput = document.getElementById('login-unified-input');
     const errorEl = document.getElementById('login-error');
-    const nsec = nsecInput?.value.trim();
+    const value = unifiedInput?.value.trim();
 
-    if (!nsec) {
-      this.showLoginError('Ingresá tu nsec');
+    if (!value) {
+      this.showLoginError('Ingresá tu nsec o bunker URL');
       return;
     }
 
     try {
-      await this.nostr.connectNsec(nsec);
+      if (value.startsWith('bunker://')) {
+        await this.nostr.connectBunker(value);
+      } else if (value.startsWith('nostrconnect://')) {
+        await this.handleNostrConnect();
+      } else {
+        await this.nostr.connectNsec(value);
+      }
+      
       this.hideLogin();
       this.showUserLoggedIn();
       
@@ -268,33 +257,6 @@ class UserMenu {
     if (errorEl) {
       errorEl.textContent = message;
       errorEl.style.display = 'block';
-    }
-  }
-
-  async handleBunkerConnect() {
-    const input = document.getElementById('bunker-url-input');
-    const url = input?.value.trim();
-    if (!url) {
-      this.showLoginError('Ingresá la URL del bunker');
-      return;
-    }
-
-    try {
-      await this.nostr.connectBunker(url);
-      this.hideLogin();
-      this.showUserLoggedIn();
-      if (this.onConnect) {
-        this.onConnect(this.nostr.pubkey, this.nostr);
-      }
-      this.nostr.fetchProfile().then(profile => {
-        this.updateProfileDisplay();
-        if (window.app?.refreshAccount) {
-          window.app.refreshAccount();
-        }
-      });
-    } catch (err) {
-      console.error('Bunker connect error:', err);
-      this.showLoginError(err.message);
     }
   }
 
