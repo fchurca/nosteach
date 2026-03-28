@@ -14,6 +14,9 @@
 ### Fixed
 - **NDK import**: Usar `ndkModule.default || ndkModule.NDK`
 - **Logout**: Limpia todos los datos de sesión
+- **Modal QR**: Cierra con ESC
+- **QR local**: Genera con qrcode (no API externa), skeleton mientras carga
+- **QR colores**: Fondo oscuro #0a0f1a, fondo blanco
 
 ---
 

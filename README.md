@@ -14,6 +14,7 @@ Probá la versión live: https://nosteach.vercel.app/
 | Nostr | nostr-tools (WebSocket directo) |
 | Pagos | @getalby/sdk (NWC), webln |
 | Storage | Relays Nostr (NIP-78) |
+| Auth | Nostr keypair (NIP-07, NIP-46) |
 | Tests | Playwright |
 
 ## Navegación

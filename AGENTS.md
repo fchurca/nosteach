@@ -22,7 +22,7 @@ NosTeach permite:
 | Nostr | nostr-tools (WebSocket directo a relays) |
 | Pagos | @getalby/sdk (NWC), webln |
 | Storage | Relays Nostr (NIP-78) |
-| Auth | Nostr keypair (nsec) |
+| Auth | Nostr keypair (NIP-07, NIP-46) |
 | Tests | Playwright |
 
 ### Relays en Uso

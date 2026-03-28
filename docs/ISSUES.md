@@ -136,7 +136,7 @@ Implementado:
 - UI: Input para bunker URL
 - Botón "Conectar con bunker"
 - Botón "Nostr Connect (QR)" con modal
-- Generación de QR con API externa
+- Generación de QR local con qrcode
 - Espera de aprobación del bunker
 
 ---
@@ -193,3 +193,7 @@ NIP-17 → Esquema de mensajería (usa NIP-44 + NIP-59)
 - **Session restore con verificación**: Verifica pubkey con extensión al restaurar sesión
 - **Auth NIP-46**: Login con bunker (bunker://...) y Nostr Connect (QR)
 - **NIP-46 Remote Signing**: Integración con NDK, firma de eventos via signer
+- **Login unificado**: Input único para nsec/bunker con detección por prefijo
+- **QR countdown**: Visual de 120s con retry automático al vencer
+- **QR local**: Genera con qrcode (no API externa)
+- **Modal QR**: Cierra con ESC, skeleton mientras carga
