@@ -1,3 +1,7 @@
+export function formatPrice(precio) {
+  return precio === 0 ? 'Gratis' : `${precio} sats`;
+}
+
 export function shortNpub(npub, prefixLen = 8, suffixLen = 8) {
   if (!npub) return '';
   return `${npub.slice(0, prefixLen)}...${npub.slice(-suffixLen)}`;

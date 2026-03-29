@@ -8,7 +8,7 @@ import { formatAuthorName } from './lib/lightning.js';
 import { nip19 } from 'nostr-tools';
 import { DEBUG, KINDS, TAGS } from './lib/constants.js';
 import { onConnectionStatusChange, getConnectionStatus, queryEvents, getNDK } from './lib/nostr.js';
-import { shortNpub, emptyState, skeletonCard, skeletonBox, spinner } from './lib/ui-utils.js';
+import { shortNpub, emptyState, skeletonCard, skeletonBox, spinner, formatPrice } from './lib/ui-utils.js';
 
 class App {
   constructor() {
@@ -717,7 +717,7 @@ class App {
       try {
         const content = typeof event.content === 'string' ? JSON.parse(event.content) : event.content;
         const precio = content.precio || 0;
-        const precioText = precio === 0 ? 'Gratis' : `${precio} sats`;
+        const precioText = formatPrice(precio);
         const preguntas = (content.evaluacion?.preguntas || []).length;
         const teacherName = teacherProfiles[event.pubkey];
         const displayName = formatAuthorName(teacherName, event.pubkey);
@@ -894,7 +894,7 @@ class App {
       container.innerHTML = events.map(event => {
         const content = typeof event.content === 'string' ? JSON.parse(event.content) : event.content;
         const precio = content.precio || 0;
-        const precioText = precio === 0 ? 'Gratis' : `${precio} sats`;
+        const precioText = formatPrice(precio);
         const modulos = (content.modulos || []).length;
         const preguntas = (content.evaluacion?.preguntas || []).length;
 

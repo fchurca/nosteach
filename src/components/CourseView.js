@@ -3,6 +3,7 @@ import { fetchProfile, getLud16, isWebLNAvailable, formatAuthorName } from '../l
 import InvoiceModal from './InvoiceModal.js';
 import { DEBUG, TAGS } from '../lib/constants.js';
 import { queryEvents } from '../lib/nostr.js';
+import { formatPrice } from '../lib/ui-utils.js';
 import { nip19 } from 'nostr-tools';
 
 class CourseView {
@@ -37,7 +38,7 @@ class CourseView {
       : this.course.content;
 
     const precio = content.precio || 0;
-    const precioText = precio === 0 ? 'Gratis' : `${precio} sats`;
+    const precioText = formatPrice(precio);
     const modulos = content.modulos || [];
     const preguntas = content.evaluacion?.preguntas || [];
     const isTeacher = this.course.pubkey === window.app?.nostr?.currentPubkey;

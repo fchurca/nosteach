@@ -2,6 +2,7 @@ import { formatAuthorName, getLud16, ZAP_AMOUNTS } from '../lib/lightning.js';
 import ZapModal from './ZapModal.js';
 import { DEBUG } from '../lib/constants.js';
 import { queryEvents } from '../lib/nostr.js';
+import { formatPrice } from '../lib/ui-utils.js';
 import { nip19 } from 'nostr-tools';
 
 class UserProfile {
@@ -101,7 +102,7 @@ class UserProfile {
         ? JSON.parse(course.content) 
         : course.content;
       const precio = content.precio || 0;
-      const precioText = precio === 0 ? 'Gratis' : `${precio} sats`;
+      const precioText = formatPrice(precio);
       const preguntas = (content.evaluacion?.preguntas || []).length;
       const modulos = (content.modulos || []).length;
 
