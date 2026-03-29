@@ -36,7 +36,8 @@ export const KINDS = {
 export const TAGS = {
   CURSO_PREFIX: 'nosteach-curso-',
   EVALUACION: 'nosteach-evaluacion',
-  PLATFORM: 'nosteach'
+  PLATFORM: 'nosteach',
+  CURSO: 'curso'
 };
 
 export const SATS_MAX = 2100000000000000; // 21M BTC en sats

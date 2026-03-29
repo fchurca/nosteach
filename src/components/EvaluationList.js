@@ -2,6 +2,7 @@ import ZapButton from './ZapButton.js';
 import InvoiceModal from './InvoiceModal.js';
 import { fetchProfile, getLud16, isWebLNAvailable } from '../lib/lightning.js';
 import { queryEvents } from '../lib/nostr.js';
+import { TAGS } from '../lib/constants.js';
 
 class EvaluationList {
   constructor(container, courseId, course, nostr, onBack) {
@@ -52,7 +53,7 @@ class EvaluationList {
       const events = await queryEvents({
         kinds: [1],
         '#e': [this.courseId],
-        '#t': ['nosteach-evaluacion']
+        '#t': [TAGS.EVALUACION]
       });
 
       this.responses = events.filter(e => {

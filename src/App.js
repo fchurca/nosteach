@@ -6,7 +6,7 @@ import EvaluationList from './components/EvaluationList.js';
 import { validateCurso } from './lib/schema.js';
 import { formatAuthorName } from './lib/lightning.js';
 import { nip19 } from 'nostr-tools';
-import { DEBUG } from './lib/constants.js';
+import { DEBUG, KINDS, TAGS } from './lib/constants.js';
 import { onConnectionStatusChange, getConnectionStatus, queryEvents, getNDK } from './lib/nostr.js';
 import { shortNpub, emptyState, skeletonCard, skeletonBox, spinner } from './lib/ui-utils.js';
 
@@ -645,7 +645,7 @@ class App {
     `;
 
     try {
-      const events = await queryEvents({ kinds: [30078], '#t': ['nosteach'] });
+      const events = await queryEvents({ kinds: [KINDS.CURSO], '#t': [TAGS.PLATFORM] });
       
       const teacherProfiles = await this.fetchTeacherProfiles(events);
       
@@ -763,7 +763,7 @@ class App {
 
     try {
       const events = await queryEvents({
-        kinds: [30078],
+        kinds: [KINDS.CURSO],
         ids: [eventId]
       });
 
@@ -866,9 +866,9 @@ class App {
 
     try {
       const events = await queryEvents({
-        kinds: [30078],
+        kinds: [KINDS.CURSO],
         authors: [myPubkey],
-        '#t': ['nosteach']
+        '#t': [TAGS.PLATFORM]
       });
 
       const container = document.getElementById('my-courses-container');
@@ -938,7 +938,7 @@ class App {
 
     try {
       const events = await queryEvents({
-        kinds: [30078],
+        kinds: [KINDS.CURSO],
         ids: [courseId]
       });
 
@@ -1183,8 +1183,8 @@ class App {
     const id = `nosteach-curso-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const tags = [
       ['d', id],
-      ['t', 'nosteach'],
-      ['t', 'curso']
+      ['t', TAGS.PLATFORM],
+      ['t', TAGS.CURSO]
     ];
 
     try {

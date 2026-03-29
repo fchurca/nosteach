@@ -1,7 +1,7 @@
 import ZapButton from './ZapButton.js';
 import { fetchProfile, getLud16, isWebLNAvailable, formatAuthorName } from '../lib/lightning.js';
 import InvoiceModal from './InvoiceModal.js';
-import { DEBUG } from '../lib/constants.js';
+import { DEBUG, TAGS } from '../lib/constants.js';
 import { queryEvents } from '../lib/nostr.js';
 import { nip19 } from 'nostr-tools';
 
@@ -339,7 +339,7 @@ class CourseView {
     const tags = [
       ['e', this.course.id],
       ['p', this.course.pubkey],
-      ['t', 'nosteach-evaluacion']
+      ['t', TAGS.EVALUACION]
     ];
 
     try {
