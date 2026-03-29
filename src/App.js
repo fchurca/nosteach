@@ -8,6 +8,7 @@ import { formatAuthorName } from './lib/lightning.js';
 import { nip19 } from 'nostr-tools';
 import { DEBUG } from './lib/constants.js';
 import { onConnectionStatusChange, getConnectionStatus, queryEvents, getNDK } from './lib/nostr.js';
+import { shortNpub, emptyState, skeletonCard, skeletonBox, spinner } from './lib/ui-utils.js';
 
 class App {
   constructor() {
@@ -200,8 +201,8 @@ class App {
   }
 
   checkStoredSession() {
-    const storedPubkey = localStorage.getItem('nostr_pubkey');
-    const storedNpub = localStorage.getItem('nostr_npub');
+    const storedPubkey = window.nostr?.currentPubkey;
+    const storedNpub = window.nostr?.currentNpub;
     
     if (storedPubkey && storedNpub && !this.pubkey) {
       this.pubkey = storedPubkey;
@@ -285,7 +286,7 @@ class App {
   updateNav() {
     const createBtn = document.getElementById('nav-create-course');
     const myCoursesBtn = document.getElementById('nav-my-courses');
-    const storedPubkey = localStorage.getItem('nostr_pubkey');
+    const storedPubkey = window.nostr?.currentPubkey;
     const isLoggedIn = this.pubkey || storedPubkey;
     
     if (createBtn) {
@@ -406,7 +407,7 @@ class App {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) return;
 
-    const storedPubkey = localStorage.getItem('nostr_pubkey');
+    const storedPubkey = window.nostr?.currentPubkey;
     const isLoggedIn = this.pubkey || storedPubkey;
     const displayPubkey = this.pubkey || storedPubkey;
     
@@ -478,8 +479,8 @@ class App {
     if (!contentArea) return;
 
     const renderView = () => {
-      const currentPubkey = this.pubkey || this.nostr?.pubkey || localStorage.getItem('nostr_pubkey');
-      const currentNpub = this.nostr?.npub || localStorage.getItem('nostr_npub') || '';
+      const currentPubkey = this.pubkey || window.nostr?.currentPubkey;
+      const currentNpub = window.nostr?.currentNpub || '';
       
       if (!currentPubkey) {
         contentArea.innerHTML = `

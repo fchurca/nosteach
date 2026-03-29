@@ -79,3 +79,15 @@ export function setSigner(newSigner) {
 export function getSigner() {
   return signer;
 }
+
+export async function fetchProfile(pubkey) {
+  const events = await queryEvents({ kinds: [0], authors: [pubkey], limit: 1 });
+  if (events.length > 0) {
+    try {
+      return JSON.parse(events[0].content);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}

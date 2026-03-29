@@ -1,5 +1,6 @@
 import NostrConnect from '../lib/NostrConnect.js';
 import { NIP46_TIMEOUT } from '../lib/constants.js';
+import { shortNpub } from '../lib/ui-utils.js';
 import QRCode from 'qrcode';
 
 class UserMenu {
@@ -492,9 +493,9 @@ class UserMenu {
     if (userBtn) userBtn.style.display = 'flex';
     if (connectBtn) connectBtn.style.display = 'none';
     
-    const shortNpub = this.nostr.npub ? `${this.nostr.npub.slice(0, 8)}...${this.nostr.npub.slice(-8)}` : '';
+    const displayNpub = shortNpub(this.nostr.npub, 8, 8);
     
-    if (npubEl) npubEl.textContent = shortNpub;
+    if (npubEl) npubEl.textContent = displayNpub;
     
     if (this.nostr.profile) {
       const displayName = this.nostr.profile.display_name || this.nostr.profile.name;
@@ -540,7 +541,7 @@ class UserMenu {
       nameEl.textContent = displayName || '(sin nombre)';
       nameEl.style.color = displayName ? '' : 'var(--text-muted)';
     }
-    if (npubEl) npubEl.textContent = this.nostr.npub ? `${this.nostr.npub.slice(0, 12)}...${this.nostr.npub.slice(-8)}` : '';
+    if (npubEl) npubEl.textContent = shortNpub(this.nostr.npub, 12, 8);
     if (nameBtnEl) {
       nameBtnEl.textContent = displayName || '(sin nombre)';
       nameBtnEl.style.color = displayName ? '' : 'var(--text-muted)';

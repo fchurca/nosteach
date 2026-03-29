@@ -120,9 +120,9 @@ El flag se mantiene en localStorage hasta que se desactive manualmente.
 ### Testing
 
 1. **Levantar el servidor primero**: `npm run dev` (corre en puerto 5173)
-2. **En otra terminal**: ejecutar `npm test` después de cambios
+2. **Ejecutar tests**: Los tests leen TEST_URL desde `.secrets`. Si no existe, usar `localhost:5173`
 3. **Playwright**: ya está instalado, requiere dependencias del sistema (`npx playwright install-deps chromium`)
-4. **Tests manuales**: abrir http://localhost:5173 en el browser
+4. **Tests manuales**: abrir la URL de TEST_URL en el browser
 
 ### Lightning Wallet para Testing
 

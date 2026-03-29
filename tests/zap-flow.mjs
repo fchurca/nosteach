@@ -1,7 +1,13 @@
 import { chromium } from 'playwright';
 import { readFileSync, existsSync } from 'fs';
 
-const URL = process.env.TEST_URL || 'http://localhost:5173';
+let TEST_URL = process.env.TEST_URL;
+if (!TEST_URL && existsSync('.secrets')) {
+  const secrets = readFileSync('.secrets', 'utf-8');
+  const match = secrets.match(/TEST_URL=(.+)/);
+  if (match) TEST_URL = match[1];
+}
+const URL = TEST_URL || 'http://localhost:5173';
 
 let NSEC_TEST = process.env.TEST_NSEC;
 if (!NSEC_TEST && existsSync('.secrets')) {

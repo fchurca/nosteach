@@ -3,6 +3,7 @@ import { getPublicKey, finalizeEvent, generateSecretKey } from 'nostr-tools/pure
 import { BunkerSigner, parseBunkerInput } from 'nostr-tools/nip46';
 import { SimplePool } from 'nostr-tools/pool';
 import { DEBUG, DEFAULT_RELAYS } from './constants.js';
+import { fetchProfile as nostrFetchProfile } from './nostr.js';
 
 const RELAYS = DEFAULT_RELAYS;
 
@@ -539,19 +540,13 @@ class NostrConnect {
 
   async fetchProfile() {
     if (!this.pubkey) return null;
-
+    
     try {
-      const events = await this.query({
-        kinds: [0],
-        authors: [this.pubkey],
-        limit: 1
-      });
-
-      if (events.length > 0) {
-        const content = JSON.parse(events[0].content);
-        this.profile = content;
-        return this.profile;
+      const profile = await nostrFetchProfile(this.pubkey);
+      if (profile) {
+        this.profile = profile;
       }
+      return this.profile;
     } catch (err) {
       console.warn('No se pudo obtener perfil:', err.message);
     }
