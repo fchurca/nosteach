@@ -21,6 +21,7 @@ class App {
     this.currentView = 'home';
     this.breadcrumbHistory = [];
     this.courseManager = null;
+    this.initCourseManager();
     this.initNostrReadOnly();
     this.init();
   }
