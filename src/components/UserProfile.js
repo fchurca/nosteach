@@ -146,7 +146,6 @@ class UserProfile {
       recipientName: displayName,
       recipientLud16: lud16,
       amounts: ZAP_AMOUNTS,
-      customMax: 10000,
       onSuccess: (result, amount) => {
         if (DEBUG) console.log('Zap exitoso:', result);
       },

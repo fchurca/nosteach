@@ -116,6 +116,16 @@ export async function getLnurlpInfo(lud16) {
   }
 }
 
+export async function getMaxSendable(lud16) {
+  if (!lud16) return null;
+  try {
+    const info = await getLnurlpInfo(lud16);
+    return info?.maxSendable ? Math.floor(info.maxSendable / 1000) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateInvoice(lud16, amountSats, comment = '') {
   const lnurlpInfo = await getLnurlpInfo(lud16);
   

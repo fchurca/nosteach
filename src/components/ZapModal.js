@@ -1,4 +1,4 @@
-import { generateQRCode, generateInvoice, sendPayment, isWebLNAvailable, getLud16, InvoiceTracker, ZAP_AMOUNTS } from '../lib/lightning.js';
+import { generateQRCode, generateInvoice, sendPayment, isWebLNAvailable, getLud16, getMaxSendable, InvoiceTracker, ZAP_AMOUNTS } from '../lib/lightning.js';
 import { formatAuthorName } from '../lib/lightning.js';
 
 class ZapModal {
@@ -7,7 +7,7 @@ class ZapModal {
     this.recipientName = options.recipientName || 'Usuario';
     this.recipientLud16 = options.recipientLud16;
     this.amounts = options.amounts || ZAP_AMOUNTS;
-    this.customMax = options.customMax || 10000;
+    this.customMax = options.customMax ?? Infinity;
     this.onSuccess = options.onSuccess || (() => {});
     this.onError = options.onError || (() => {});
     this.onClose = options.onClose || (() => {});
@@ -68,7 +68,7 @@ class ZapModal {
             ${amount} sats
           </button>
         `).join('')}
-        ${this.customMax > 0 ? `
+        ${this.customMax !== 0 ? `
           <button class="zap-amount-btn zap-custom-btn" data-amount="custom">
             Custom
           </button>
@@ -81,7 +81,7 @@ class ZapModal {
           id="zap-custom-amount" 
           placeholder="Cantidad en sats"
           min="1"
-          max="${this.customMax}"
+          ${this.customMax !== Infinity ? `max="${this.customMax}"` : ''}
         >
         <button id="zap-custom-confirm" class="btn-secondary" style="width: 100%;">
           Confirmar
@@ -106,7 +106,19 @@ class ZapModal {
     });
 
     if (customBtn) {
-      customBtn.addEventListener('click', () => {
+      customBtn.addEventListener('click', async () => {
+        let lud16 = this.recipientLud16;
+        if (!lud16 && this.recipientPubkey) {
+          lud16 = await getLud16(this.recipientPubkey);
+        }
+        if (lud16) {
+          const maxSats = await getMaxSendable(lud16);
+          if (maxSats) {
+            const inputEl = customInput.querySelector('input');
+            inputEl.max = maxSats;
+            inputEl.placeholder = `Cantidad en sats (max: ${maxSats})`;
+          }
+        }
         customInput.style.display = 'block';
         customBtn.style.display = 'none';
       });
@@ -116,11 +128,12 @@ class ZapModal {
       customConfirm.addEventListener('click', () => {
         const input = document.getElementById('zap-custom-amount');
         const amount = parseInt(input.value);
-        if (amount > 0 && amount <= this.customMax) {
+        const maxMsg = this.customMax === Infinity ? 'sin límite' : `1-${this.customMax}`;
+        if (amount > 0 && (this.customMax === Infinity || amount <= this.customMax)) {
           customInput.style.display = 'none';
           this.startZap(amount);
         } else {
-          this.showError(`Monto inválido (1-${this.customMax} sats)`);
+          this.showError(`Monto inválido (${maxMsg} sats)`);
         }
       });
     }

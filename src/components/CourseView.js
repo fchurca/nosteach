@@ -145,7 +145,6 @@ class CourseView {
       recipientName: this.teacherProfile?.display_name || this.teacherProfile?.name || 'Profesor',
       recipientLud16: teacherLud16,
       amounts: [21, 69, 210, 690],
-      customMax: 10000,
       onSuccess: (result, amount) => {
         if (DEBUG) console.log('Zap exitoso:', result);
       },

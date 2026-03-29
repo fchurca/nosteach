@@ -1,4 +1,4 @@
-import { ZAP_AMOUNTS, getLud16 } from '../lib/lightning.js';
+import { ZAP_AMOUNTS, getLud16, getMaxSendable } from '../lib/lightning.js';
 import { fetchProfile } from '../lib/lightning.js';
 import InvoiceModal from './InvoiceModal.js';
 import { DEBUG } from '../lib/constants.js';
@@ -9,7 +9,7 @@ class ZapButton {
     this.recipientName = options.recipientName || 'Usuario';
     this.recipientLud16 = options.recipientLud16 || null;
     this.amounts = options.amounts || ZAP_AMOUNTS;
-    this.customMax = options.customMax || 10000;
+    this.customMax = options.customMax ?? Infinity;
     this.onSuccess = options.onSuccess || (() => {});
     this.onError = options.onError || (() => {});
     this.onStart = options.onStart || (() => {});
@@ -97,7 +97,20 @@ class ZapButton {
     });
     
     if (customBtn) {
-      customBtn.addEventListener('click', () => {
+      customBtn.addEventListener('click', async () => {
+        if (!this.lud16 && this.recipientLud16) {
+          this.lud16 = this.recipientLud16;
+        }
+        if (!this.lud16) {
+          this.lud16 = await getLud16(this.recipientPubkey);
+        }
+        if (this.lud16) {
+          const maxSats = await getMaxSendable(this.lud16);
+          if (maxSats) {
+            customInput.querySelector('input').max = maxSats;
+            customInput.querySelector('input').placeholder = `Cantidad en sats (max: ${maxSats})`;
+          }
+        }
         customInput.style.display = 'block';
         customBtn.style.display = 'none';
       });
@@ -107,11 +120,13 @@ class ZapButton {
       customConfirm.addEventListener('click', async () => {
         const input = this.container.querySelector('#zap-custom-amount');
         const amount = parseInt(input.value);
-        if (amount > 0 && amount <= this.customMax) {
+        const max = parseInt(input.max) || Infinity;
+        if (amount > 0 && amount <= max) {
           customInput.style.display = 'none';
           await this.openInvoiceModal(amount);
         } else {
-          this.showError(`Monto inválido (1-${this.customMax} sats)`);
+          const maxMsg = input.max ? `1-${input.max}` : 'sin límite';
+          this.showError(`Monto inválido (${maxMsg} sats)`);
         }
       });
     }
