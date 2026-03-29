@@ -552,7 +552,7 @@ class App {
                 <strong>Protocolo de autenticación:</strong> 
                 ${this.nostr?.authMethod === 'nip46' ? 'NIP-46 (Remoto)' : 
                   this.nostr?.authMethod === 'nip07' ? 'NIP-07 (Extensión)' : 
-                  'Clave privada local'}
+                  '<span title="No recomendado: la clave está almacenada en el navegador. Usar extensión (NIP-07) o Nostr Connect (NIP-46) es más seguro." style="background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 4px; cursor: help;">⚠️ Clave privada local</span>'}
               </div>
               <div style="margin-bottom: 10px;">
                 <strong>Roles activos:</strong>

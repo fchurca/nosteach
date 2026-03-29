@@ -1190,3 +1190,10 @@ nav button {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
+.nsec-warning {
+  background-color: #fff3cd !important;
+  background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%) !important;
+  border-color: #ffc107 !important;
+  color: #856404 !important;
+}

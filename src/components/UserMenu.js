@@ -153,6 +153,19 @@ class UserMenu {
       });
     }
 
+    if (unifiedInput) {
+      unifiedInput.addEventListener('input', (e) => {
+        const value = e.target.value.trim();
+        if (value.startsWith('nsec1')) {
+          unifiedInput.classList.add('nsec-warning');
+          unifiedInput.title = 'nsec no recomendado, usar extensión (NIP-07) o Nostr Connect (NIP-46)';
+        } else {
+          unifiedInput.classList.remove('nsec-warning');
+          unifiedInput.title = '';
+        }
+      });
+    }
+
     if (connectBtn) {
       connectBtn.addEventListener('click', (e) => {
         e.stopPropagation();

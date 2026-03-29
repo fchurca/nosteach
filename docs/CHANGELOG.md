@@ -18,6 +18,8 @@
 ### Fixed
 - **Sesión perenne**: Sin timeout, la sesión dura para siempre en localStorage
 - **Infinite reload loop**: Tab sync ahora usa _isTabSync para evitar reload infinito
+- **Warning nsec**: Input de login se pone en amarillo si detectás nsec, con tooltip
+- **Warning Mi Cuenta**: Muestra "⚠️ Clave privada local" con tooltip si usás nsec
 - **NDK import**: Usar `ndkModule.default || ndkModule.NDK**
 - **Logout**: Limpia todos los datos de sesión
 - **Modal QR**: Cierra con ESC

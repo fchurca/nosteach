@@ -167,4 +167,97 @@ NIP-17 → Esquema de mensajería (usa NIP-44 + NIP-59)
 - **QR local**: Genera con qrcode (no API externa)
 - **Modal QR**: Cierra con ESC, skeleton mientras carga
 - **Logout desde #/p**: Redirige a perfil público
-- **Login/Logout**: Refresca vista actual
+- **Login/Logout**: Refressa vista actual
+
+---
+
+## Auditoría de Seguridad
+
+### 🔴 Críticos
+
+#### 1. eval() para breadcrumbs
+**Ubicación**: `src/App.js:174`
+```javascript
+eval(item.onclickCode);
+```
+**Problema**: XSS directo - cualquier script puede ejecutarse
+**Solución**: Usar hashes (strings) en vez de código, navegar con `window.location.hash`
+
+#### 2. Client Secret en localStorage
+**Ubicación**: `src/lib/NostrConnect.js:221, 270`
+```javascript
+localStorage.setItem('nostr_client_secret', clientSecret);
+```
+**Problema**: Accesible por cualquier JS en el dominio
+**Solución**: Usar sessionStorage o eliminar si no es necesario
+
+---
+
+### 🟠 Altos
+
+#### 3. Private Key en localStorage
+**Ubicación**: `src/lib/NostrConnect.js:158`
+```javascript
+localStorage.setItem('nostr_sk', ...);
+```
+**Problema**: Secret key almacenada en storage público
+**Solución**: No guardar nunca secret keys en localStorage, usar solo NIP-07 o NIP-46
+
+#### 4. innerHTML sin sanitizar
+**Ubicación**: Todos los componentes (62 usos)
+```javascript
+contentArea.innerHTML = `...${event.content}...`;
+```
+**Problema**: XSS si event.content contiene scripts
+**Solución**: 
+- Usar `textContent` donde sea posible
+- Sanitizar con DOMPurify
+- Usar createElement + textContent
+
+#### 5. Validación solo en cliente
+**Ubicación**: `src/lib/schema.js`
+**Problema**: Validación puede ser evitada
+**Solución**: Agregar validación en relays o servidor intermediario
+
+---
+
+### 🟡 Medios
+
+#### 6. Debug flag global
+**Ubicación**: `src/lib/constants.js:14`
+```javascript
+localStorage.setItem('debug', 'true');
+```
+**Problema**: Cualquier sitio puede setear debug
+
+#### 7. Storage event para tab sync
+**Ubicación**: `src/lib/NostrConnect.js:88`
+**Problema**: Manipulable por extensiones/scripts
+
+---
+
+### 🟢 Info
+
+- Sin CORS configurado
+- Sin rate limiting
+- console.log en producción
+
+---
+
+## Workarounds Implementados
+
+### Warnings UX para métodos de auth no seguros
+
+**Problema**: nsec (clave privada) se guarda en localStorage, lo cual es inseguro.
+
+**Workaround implementado**:
+1. **Input de login** (`src/components/UserMenu.js`): Input se pone en amarillo cuando detectás nsec, con tooltip "nsec no recomendado, usar extensión (NIP-07) o Nostr Connect (NIP-46)"
+2. **Mi Cuenta** (`src/App.js`): Muestra "⚠️ Clave privada local" con tooltip si el método de auth es nsec
+3. **CSS** (`src/styles/main.css`): Clase `.nsec-warning` con fondo amarillo
+
+**Archivos modificados**:
+- `src/components/UserMenu.js` - detección de nsec en input + clase warning
+- `src/App.js` - badge de warning en showAccount
+- `src/styles/main.css` - clase `.nsec-warning`
+
+**Aún no resuelto**: El problema de fondo (guardar secrets en localStorage) - ver issue #2 y #3 más arriba.
