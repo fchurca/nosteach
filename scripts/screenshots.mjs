@@ -1,6 +1,14 @@
 import { chromium } from 'playwright';
+import { readFileSync, existsSync } from 'fs';
 
 const BASE_URL = 'http://localhost:5173';
+
+let TEST_NSEC = process.env.TEST_NSEC;
+if (!TEST_NSEC && existsSync('.secrets')) {
+  const secrets = readFileSync('.secrets', 'utf-8');
+  const match = secrets.match(/TEST_NSEC=(.+)/);
+  if (match) TEST_NSEC = match[1];
+}
 
 async function screenshot(page, path, waitFor = null) {
   if (waitFor) {
@@ -48,7 +56,7 @@ async function main() {
   // 04_nsec_filled.png - nsec input filled (we'll skip filling for now)
   await page.click('#user-menu-connect');
   await page.waitForTimeout(500);
-  await page.fill('#login-unified-input', 'nsec197dzw28nja08vdu5jzg77kduxff0l35as6dsy0v0w9ld9pu9ggdqu0w2hf');
+  await page.fill('#login-unified-input', TEST_NSEC);
   await screenshot(page, 'screenshots/04_nsec_filled.png');
 
   // 05_after_login.png - After clicking connect
